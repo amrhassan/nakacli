@@ -2,12 +2,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: saltyrtc/circleci-image-rs
+      - image: liuchong/rustup
     steps:
       - checkout
-      - run: rustup toolchain add nightly
       - run: rustup default nightly
-      - run: rustup update
+      - run: apt-get update -y
+      - run: apt-get install -y cmake
       - run:
           name: Run tests
           command: cargo test
