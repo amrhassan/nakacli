@@ -2,13 +2,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: debian:stretch
+      - image: saltyrtc/circleci-image-rs
     steps:
       - checkout
-      - run: curl https://sh.rustup.rs -sSf | sh
-      - run: ./rustup toolchain add nightly
-      - run: ./rustup default nightly
-      - run: ./rustup update
+      - run: rustup toolchain add nightly
+      - run: rustup default nightly
+      - run: rustup update
       - run:
           name: Run tests
           command: cargo test
