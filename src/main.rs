@@ -5,8 +5,8 @@ extern crate tokio_core;
 extern crate hyper;
 extern crate hyper_tls;
 extern crate ansi_term;
-extern crate syntect;
 extern crate clap;
+extern crate serde_json;
 
 use std::process::exit;
 use tokio_core::reactor::Core;
@@ -19,6 +19,7 @@ use ansi_term::Colour;
 use clap::{App, Arg, SubCommand, AppSettings};
 use hyper::{Method, Request, Response, Client, Uri};
 use hyper::header;
+use serde_json::Value;
 
 const DNS_WORKER_THREADS: usize = 4;
 
@@ -52,7 +53,7 @@ fn main() {
 
         match core.run(action) {
             Ok(output) => {
-                println!("{}", output);
+                println!("{}", serde_json::to_string_pretty(&output).expect("Failed to pretty-format the JSON response"));
             },
             Err(err) => {
                 eprintln!("{}", err);
@@ -79,15 +80,11 @@ fn build_request(method: Method, uri: Uri, oauth2_token: Option<&str>, body: Opt
     request
 }
 
-fn read_full_resp_body_utf8(response: hyper::Response) -> impl Future<Item=String, Error=String> {
+fn read_full_resp_body_utf8(response: hyper::Response) -> impl Future<Item=Value, Error=String> {
     response
         .body()
         .concat2()
         .map_err(|err| format!("{}: {}", Colour::Red.paint("HTTP error"), err))
-        .and_then(|chunk| {
-            match String::from_utf8(chunk.into_iter().collect()) {
-                Ok(body) => future::ok(body),
-                Err(err) => future::err(format!("{}", err))
-            }
-        })
+        .and_then(|chunk| future::result(String::from_utf8(chunk.into_iter().collect()).map_err(|err| format!("{}", err))))
+        .and_then(|text| future::result(serde_json::from_str(&text).map_err(|err| format!("{}", err))))
 }
