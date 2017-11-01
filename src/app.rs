@@ -3,7 +3,7 @@ use hyper::client::{HttpConnector};
 use hyper_tls::HttpsConnector;
 use hyper::{Request, Response, Client};
 use futures::Future;
-use fail::failure;
+use fail::{failure, Failure};
 
 pub struct Application {
     core: Core,
@@ -24,14 +24,14 @@ impl Application {
     }
 
     /// Returns the action of executing the given HTTP request yielding an HTTP response
-    pub fn execute_request(&self, request: Request) -> impl Future<Item=Response, Error=String> {
+    pub fn execute_request(&self, request: Request) -> impl Future<Item=Response, Error=Failure> {
         self.http_client
             .request(request)
             .map_err(|err| failure("Sending HTTP request failed", err))
     }
 
     /// Runs the given future on the main event loop
-    pub fn run<A, F: Future<Item=A, Error=String>>(&mut self, future: F) -> Result<A, String> {
+    pub fn run<A, F: Future<Item=A, Error=Failure>>(&mut self, future: F) -> Result<A, Failure> {
         self.core.run(future)
     }
 }

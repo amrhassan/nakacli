@@ -5,11 +5,12 @@ use hyper::Method;
 use server::ServerInfo;
 use serde_json::Value;
 use app::Application;
+use fail::Failure;
 
 /// Retrieves monitoring metrics information from server
 pub fn metrics(
     server_info: ServerInfo,
-    application: &mut Application) -> impl Future<Item=Value, Error=String> {
+    application: &mut Application) -> impl Future<Item=Value, Error=Failure> {
     let request = http::build_request(
         Method::Get,
         format!("{}/metrics", server_info.url_base).parse().expect("Failed to construct path for HTTP request"),

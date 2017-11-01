@@ -7,7 +7,7 @@ use futures::Future;
 use serde_json;
 use serde_json::Value;
 use futures::Stream;
-use fail::failure;
+use fail::{failure, Failure};
 
 pub fn build_request(method: Method, uri: Uri, oauth2_token: Option<&str>, body: Option<&str>) -> Request {
     let mut request = Request::new(method, uri);
@@ -20,7 +20,7 @@ pub fn build_request(method: Method, uri: Uri, oauth2_token: Option<&str>, body:
     request
 }
 
-pub fn read_full_resp_body_utf8_json(response: hyper::Response) -> impl Future<Item=Value, Error=String> {
+pub fn read_full_resp_body_utf8_json(response: hyper::Response) -> impl Future<Item=Value, Error=Failure> {
     response
         .body()
         .concat2()
