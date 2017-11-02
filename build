@@ -13,7 +13,7 @@ VERSION=$(git describe --tags)
 build() {
 	echo "Building for $1..."
 	cargo build --release --target $2
-	tar -cvjsf nakacli-$VERSION-$2.tar.bz2 target/$2/release/nakacli
+	tar -cvjf target/nakacli-$VERSION-$2.tar.bz2 target/$2/release/nakacli
 }
 
 build "Mac OS" x86_64-apple-darwin
