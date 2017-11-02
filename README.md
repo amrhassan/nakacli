@@ -1,5 +1,5 @@
 # nakacli #
-CLI client for Nakadi
+CLI Client for Nakadi
 
 # Install #
 ## macOS ##
