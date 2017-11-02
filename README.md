@@ -1,4 +1,6 @@
 # nakacli #
+[![Build Status](https://travis-ci.org/amrhassan/nakacli.svg?branch=master)](https://travis-ci.org/amrhassan/nakacli)
+
 CLI Client for Nakadi
 
 # Install #
