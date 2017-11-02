@@ -13,7 +13,7 @@ VERSION=$(git describe --tags)
 build() {
 	echo "Building for $1..."
 	cargo build --release --target $2
-	tar -cvjf nakacli-$VERSION-$2.tar.bz2 target/$2/release/nakacli
+	tar -cvjf nakacli-$VERSION-$2.tar.bz2 -C target/$2/release/nakacli
 	shasum -a 256 nakacli-$VERSION-$2.tar.bz2 > nakacli-$VERSION-$2.sha256
 	mv *.bz2 *.sha256 target
 }
