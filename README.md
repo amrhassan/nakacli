@@ -1,10 +1,19 @@
 # nakacli #
 CLI client for Nakadi
 
+# Install #
+## macOS ##
+```bash
+brew install amrhassan/macosapps/nakacli
+```
+
+## Other Platforms ##
+nakacli is compiles into a single binary with no runtime dependencies, so find the latest release in [releases](https://github.com/amrhassan/nakacli/releases) and run it however you run binaries on your operating system.
+
 # Usage #
 ```
 user$ nakacli --help
-CLI client for Nakadi 
+CLI Client for Nakadi 
 
 USAGE:
     nakacli [OPTIONS] <SUBCOMMAND>
