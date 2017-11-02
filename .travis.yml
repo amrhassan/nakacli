@@ -4,9 +4,3 @@ rust:
 os:
   - linux
   - osx
-after_success: cargo build --release
-addons:
-  artifacts:
-    debug: true
-    paths:
-      - target/release/nakacli
