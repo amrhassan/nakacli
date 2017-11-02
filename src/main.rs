@@ -26,7 +26,7 @@ fn main() {
     const URL_BASE_ARG_NAME: &str = "url_base";
     const METRICS_SUBCOMMAND_NAME: &str = "metrics";
     const ZIGN_ARG_NAME: &str = "zign";
-    let matches = App::new("CLI client for Nakadi")
+    let matches = App::new("CLI Client for Nakadi")
         .setting(AppSettings::SubcommandRequired)
         .arg(Arg::with_name(BEARER_TOKEN_ARG_NAME).long("bearer-token").value_name("TOKEN").help("Bearer token value").takes_value(true).global(true).conflicts_with(ZIGN_ARG_NAME))
         .arg(Arg::with_name(URL_BASE_ARG_NAME).long("url").value_name("NAKADI_URL_BASE").help("scheme://hostname:[port] of the Nakadi server").takes_value(true).global(true))
