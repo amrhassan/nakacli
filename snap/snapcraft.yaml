@@ -1,0 +1,16 @@
+name: nakacli
+version: '0.0.0'
+summary: CLI Client for Nakadi Edit
+description: CLI Client for Nakadi Edit
+
+grade: stable
+confinement: strict
+  
+apps:
+  nakacli:
+    command: nakacli
+
+parts:
+  nakacli:
+    plugin: dump
+    source: https://github.com/amrhassan/nakacli/releases/download/$SNAPCRAFT_PROJECT_VERSION/nakacli-$SNAPCRAFT_PROJECT_VERSION-x86_64-unknown-linux-gnu.tar.bz2
