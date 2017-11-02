@@ -14,7 +14,7 @@ pub fn metrics(
     let request = http::build_request(
         Method::Get,
         format!("{}/metrics", server_info.url_base).parse().expect("Failed to construct path for HTTP request"),
-        server_info.oauth2_token,
+        server_info.bearer_token,
         None);
     let response_future = application.execute_request(request);
     let response_body = response_future.and_then(http::read_full_resp_body_utf8_json);
