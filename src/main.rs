@@ -28,8 +28,8 @@ fn main() {
     const ZIGN_ARG_NAME: &str = "zign";
     let matches = App::new("CLI Client for Nakadi")
         .setting(AppSettings::SubcommandRequired)
-        .arg(Arg::with_name(BEARER_TOKEN_ARG_NAME).long("bearer-token").value_name("TOKEN").help("Bearer token value").takes_value(true).global(true).conflicts_with(ZIGN_ARG_NAME))
-        .arg(Arg::with_name(URL_BASE_ARG_NAME).long("url").value_name("NAKADI_URL_BASE").help("scheme://hostname:[port] of the Nakadi server").takes_value(true).global(true))
+        .arg(Arg::with_name(BEARER_TOKEN_ARG_NAME).long("bearer-token").value_name("TOKEN").help("Bearer token value").env("BEARER_TOKEN").global(true).conflicts_with(ZIGN_ARG_NAME))
+        .arg(Arg::with_name(URL_BASE_ARG_NAME).long("url").value_name("NAKADI_URL_BASE").help("scheme://hostname:[port] of the Nakadi server").env("NAKADI_URL").global(true))
         .arg(Arg::with_name(ZIGN_ARG_NAME).long("zign").help("Use zign to acquire a Bearer token").takes_value(false).global(true).conflicts_with(BEARER_TOKEN_ARG_NAME))
         .subcommand(SubCommand::with_name(METRICS_SUBCOMMAND_NAME).about("Gets monitoring metrics"))
         .get_matches();
