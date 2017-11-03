@@ -8,16 +8,28 @@ use serde_json;
 use serde_json::Value;
 use futures::Stream;
 use fail::{failure, Failure};
+use server::Authorization;
+use auth;
 
-pub fn build_request(method: Method, uri: Uri, oauth2_token: Option<&str>, body: Option<&str>) -> Request {
+pub fn build_request(method: Method, uri: Uri, authorization: Authorization, body: Option<&str>) -> Result<Request, Failure> {
+
     let mut request = Request::new(method, uri);
-    if let Some(token_value) = oauth2_token {
-        request.headers_mut().set(header::Authorization("Bearer".to_owned() + token_value))
+
+    let bearer_token = match authorization {
+        Authorization::None => None,
+        Authorization::BearerToken(token) => Some(token.to_owned()),
+        Authorization::Zign => Some(auth::zign()?)
+    };
+
+    if let Some(bearer_token_value) = bearer_token {
+        request.headers_mut().set(header::Authorization("Bearer".to_owned() + &bearer_token_value))
     }
+
     if let Some(body_value) = body {
         request.set_body(body_value.to_owned());
     }
-    request
+
+    Ok(request)
 }
 
 pub fn read_full_resp_body_utf8_json(response: hyper::Response) -> impl Future<Item=Value, Error=Failure> {
