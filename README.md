@@ -10,7 +10,7 @@ brew install amrhassan/macosapps/nakacli
 ```
 ## Ubuntu ##
 ```bash
-sudo snap install --edge nakacli
+snap install --edge nakacli
 ```
 ## Arch Linux ##
 ```bash
