@@ -10,6 +10,11 @@ use futures::Stream;
 use fail::{failure, Failure};
 use server::Authorization;
 use auth;
+use hyper::client::{HttpConnector};
+use hyper_tls::HttpsConnector;
+use hyper::{Response, Client};
+
+pub type HttpClient = Client<HttpsConnector<HttpConnector>>;
 
 pub fn build_request(method: Method, uri: Uri, authorization: Authorization, body: Option<&str>) -> Result<Request, Failure> {
 
@@ -39,4 +44,8 @@ pub fn read_full_resp_body_utf8_json(response: hyper::Response) -> impl Future<I
         .map_err(|err| failure("HTTP error", err))
         .and_then(|chunk| future::result(String::from_utf8(chunk.into_iter().collect()).map_err(|err| failure("UTF-8 decoding failure", err))))
         .and_then(|text| future::result(serde_json::from_str(&text).map_err(|err| failure("JSON parsing failure", err))))
+}
+
+pub fn execute_request(http_client: &HttpClient, request: Request) -> impl Future<Item=Response, Error=Failure> {
+    http_client.request(request).map_err(|err| failure("Sending HTTP request failed", err))
 }

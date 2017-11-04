@@ -51,19 +51,16 @@ fn main() {
     let mut application = Application::new();
 
     let action = match matches.subcommand_name() {
-        Some(METRICS_SUBCOMMAND_NAME) => command_metrics::metrics(server_info, &mut application),
+        Some(METRICS_SUBCOMMAND_NAME) => command_metrics::metrics(server_info, &application.http_client),
         _ => panic!("No subcommand is provided, but clap should have handled this already!")
     };
 
-    match action {
-        Ok(action_future) => match application.run(action_future) {
-            Ok(output) => {
-                println!("{}", serde_json::to_string_pretty(&output).expect("Failed to pretty-format the JSON response"));
-            },
-            Err(err) => {
-                die(1, err);
-            }
+    match application.core.run(action) {
+        Ok(output) => {
+            println!("{}", serde_json::to_string_pretty(&output).expect("Failed to pretty-format the JSON response"));
         },
-        Err(err) => die(1, err)
+        Err(err) => {
+            die(1, err);
+        }
     }
 }

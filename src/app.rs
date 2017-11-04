@@ -1,13 +1,11 @@
 use tokio_core::reactor::Core;
 use hyper::client::{HttpConnector};
 use hyper_tls::HttpsConnector;
-use hyper::{Request, Response, Client};
-use futures::Future;
-use fail::{failure, Failure};
+use hyper::Client;
 
 pub struct Application {
-    core: Core,
-    http_client: Client<HttpsConnector<HttpConnector>>
+    pub core: Core,
+    pub http_client: Client<HttpsConnector<HttpConnector>>
 }
 
 const DNS_WORKER_THREADS: usize = 1;
@@ -21,17 +19,5 @@ impl Application {
             .connector(HttpsConnector::new(DNS_WORKER_THREADS, &handle).expect("Failed to initialize TLS for HTTPS"))
             .build(&handle);
         Application { core, http_client }
-    }
-
-    /// Returns the action of executing the given HTTP request yielding an HTTP response
-    pub fn execute_request(&self, request: Request) -> impl Future<Item=Response, Error=Failure> {
-        self.http_client
-            .request(request)
-            .map_err(|err| failure("Sending HTTP request failed", err))
-    }
-
-    /// Runs the given future on the main event loop
-    pub fn run<A, F: Future<Item=A, Error=Failure>>(&mut self, future: F) -> Result<A, Failure> {
-        self.core.run(future)
     }
 }
