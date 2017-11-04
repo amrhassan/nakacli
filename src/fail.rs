@@ -16,6 +16,10 @@ pub fn failure<A: Display>(header: &str, detailed: A) -> Failure {
     Failure { show: format!("{}, {}", Colour::Red.paint(header), detailed) }
 }
 
+pub fn failureln<A: Display>(header: &str, detailed: A) -> Failure {
+    Failure { show: format!("{}\n{}", Colour::Red.paint(header), detailed) }
+}
+
 pub fn die(exit_code: i32, failure: Failure) -> ! {
     eprintln!("{}", failure);
     exit(exit_code)

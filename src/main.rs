@@ -14,11 +14,11 @@ mod fail;
 mod server;
 mod command_metrics;
 mod auth;
+mod output;
 
 use clap::{App, Arg, SubCommand, AppSettings};
 use app::Application;
 use server::ServerInfo;
-use fail::die;
 
 fn main() {
 
@@ -50,17 +50,8 @@ fn main() {
 
     let mut application = Application::new();
 
-    let action = match matches.subcommand_name() {
-        Some(METRICS_SUBCOMMAND_NAME) => command_metrics::metrics(server_info, &application.http_client),
+    match matches.subcommand_name() {
+        Some(METRICS_SUBCOMMAND_NAME) => command_metrics::run(server_info, &mut application),
         _ => panic!("No subcommand is provided, but clap should have handled this already!")
-    };
-
-    match application.core.run(action) {
-        Ok(output) => {
-            println!("{}", serde_json::to_string_pretty(&output).expect("Failed to pretty-format the JSON response"));
-        },
-        Err(err) => {
-            die(1, err);
-        }
     }
 }
