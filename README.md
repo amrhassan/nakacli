@@ -8,6 +8,10 @@ CLI Client for Nakadi
 ```bash
 brew install amrhassan/macosapps/nakacli
 ```
+## Ubuntu ##
+```bash
+snap install --edge nakacli
+```
 ## Arch Linux ##
 ```bash
 yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
@@ -16,6 +20,14 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 ## Other Platforms ##
 `nakacli` compiles into a single binary with no runtime dependencies, so find the latest release in [releases](https://github.com/amrhassan/nakacli/releases) and run it however you run binaries on your operating system.
 
+# Features #
+- [x] Metrics querying
+- [x] Zign authentication
+- [ ] Event type creation
+- [ ] Even type deletion
+- [ ] Publishing events
+- [ ] Creating subscriptions
+- [ ] Stream-listen on events from a subscription
 # Usage #
 ```
 user$ nakacli --help
