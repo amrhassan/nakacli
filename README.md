@@ -8,6 +8,10 @@ CLI Client for Nakadi
 ```bash
 brew install amrhassan/macosapps/nakacli
 ```
+## Ubuntu ##
+```bash
+sudo snap install --edge nakacli
+```
 ## Arch Linux ##
 ```bash
 yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
