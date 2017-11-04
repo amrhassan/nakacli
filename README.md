@@ -22,7 +22,7 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 
 # Features #
 - [x] Metrics querying
-- [x] Zign authentication
+- [x] [Zign](https://github.com/zalando-stups/zign) authentication
 - [ ] Event type creation
 - [ ] Even type deletion
 - [ ] Publishing events
