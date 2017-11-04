@@ -1,7 +1,7 @@
 # nakacli #
 [![Build Status](https://travis-ci.org/amrhassan/nakacli.svg?branch=master)](https://travis-ci.org/amrhassan/nakacli)
 
-CLI Client for Nakadi
+CLI Client for [Nakadi](https://zalando.github.io/nakadi/)
 
 # Install #
 ## macOS ##
@@ -18,7 +18,7 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 ```
 
 ## Other Platforms ##
-`nakacli` compiles into a single binary with no runtime dependencies, so find the latest release in [releases](https://github.com/amrhassan/nakacli/releases) and run it however you run binaries on your operating system.
+`nakacli` compiles into a single binary with no extra runtime dependencies, so find the latest release in [releases](https://github.com/amrhassan/nakacli/releases) and run it however you run binaries on your operating system.
 
 # Features #
 - [x] Metrics querying
