@@ -1,24 +1,26 @@
 
 use hyper;
-use hyper::{Method, Request, Uri};
+use hyper::{Method, Request};
 use hyper::header;
 use futures::future;
 use futures::Future;
 use futures::Stream;
-use fail::{failure, Failure};
+use output::{failure, Failure};
 use server::Authorization;
 use auth;
 use hyper::client::{HttpConnector};
 use hyper_tls::HttpsConnector;
-use hyper::{Response, Client};
+use hyper::{Response, Client, StatusCode};
+use server::ServerInfo;
 
 pub type HttpClient = Client<HttpsConnector<HttpConnector>>;
 
-pub fn build_request(method: Method, uri: Uri, authorization: Authorization, body: Option<&str>) -> Result<Request, Failure> {
+pub fn build_request(method: Method, path: &str, server_info: &ServerInfo, body: Option<&str>) -> Result<Request, Failure> {
 
+    let uri = format!("{}{}", server_info.url_base, path).parse().expect("Failed to construct URI for HTTP request");
     let mut request = Request::new(method, uri);
 
-    let bearer_token = match authorization {
+    let bearer_token = match server_info.authorization {
         Authorization::None => None,
         Authorization::BearerToken(token) => Some(token.to_owned()),
         Authorization::Zign => Some(auth::zign()?)
@@ -45,4 +47,17 @@ pub fn read_full_resp_body_utf8(response: hyper::Response) -> impl Future<Item=S
 
 pub fn execute_request(http_client: &HttpClient, request: Request) -> impl Future<Item=Response, Error=Failure> {
     http_client.request(request).map_err(|err| failure("Sending HTTP request failed", err))
+}
+
+/// Executes an HTTP request with the given paramters, and returns the [[StatusCode]] and full body of the response
+pub fn execute_and_read_full_resp_body_utf8<'a>(
+    http_client: &'a HttpClient,
+    method: Method,
+    path: &'a str,
+    server_info: &'a ServerInfo,
+    body: Option<&'a str>) -> impl Future<Item=(StatusCode, String), Error=Failure> + 'a {
+    let request = build_request(method, path, server_info, body);
+    future::result(request)
+        .and_then(move |r| execute_request(http_client, r))
+        .and_then(|resp| { let status = resp.status(); read_full_resp_body_utf8(resp).map(move |v| (status, v))})
 }

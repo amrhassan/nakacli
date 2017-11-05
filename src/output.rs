@@ -1,7 +1,51 @@
 
-use serde_json::*;
+use serde_json;
+use serde_json::{Value, to_string_pretty, from_str};
+use hyper::StatusCode;
+use ansi_term::Colour;
+use std::fmt::{Display, Formatter};
+use std::process::exit;
+use std::fmt;
 
-pub fn pretty_json(json: &str) -> String {
-    let value: Result<Value> = from_str(json);
+pub fn die(exit_code: i32, failure: Failure) -> ! {
+    eprintln!("{}", failure);
+    exit(exit_code)
+}
+
+pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_status_code: StatusCode) {
+    match result {
+        Ok((status_code, ref output)) if status_code == expected_status_code => {
+            if !output.is_empty() {
+                println!("{}", pretty_json(&output));
+            }
+        },
+        Ok((_, output)) => {
+            die(1, failureln("Unexpected response:", pretty_json(&output)));
+        }
+        Err(err) => {
+            die(1, err);
+        }
+    }
+}
+
+/// Canonical representation of error message
+pub fn failure<A: Display>(header: &str, detailed: A) -> Failure {
+    Failure { show: format!("{}, {}", Colour::Red.paint(header), detailed) }
+}
+
+pub struct Failure { show: String }
+
+impl Display for Failure {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.show)
+    }
+}
+
+fn failureln<A: Display>(header: &str, detailed: A) -> Failure {
+    Failure { show: format!("{}\n{}", Colour::Red.paint(header), detailed) }
+}
+
+fn pretty_json(json: &str) -> String {
+    let value: Result<Value, serde_json::Error> = from_str(json);
     value.and_then(|ref v| to_string_pretty(v)).unwrap_or(json.to_owned())
 }

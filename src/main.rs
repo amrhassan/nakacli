@@ -10,9 +10,9 @@ extern crate serde_json;
 
 mod app;
 mod http;
-mod fail;
 mod server;
 mod command_metrics;
+mod command_event_publish;
 mod auth;
 mod output;
 
@@ -40,6 +40,12 @@ fn main() {
         const EVENT_PUBLISH: &'static str = "publish";
     }
 
+    struct ArgName;
+    impl ArgName {
+        const EVENT_PUBLISH_NAME: &'static str = "name";
+        const EVENT_PUBLISH_JSON_BODY: &'static str = "json-body";
+    }
+
     let option_bearer_token = Arg::with_name(OptionName::BEARER_TOKEN)
         .long("bearer-token")
         .value_name("TOKEN")
@@ -64,7 +70,15 @@ fn main() {
     let subcommand_metrics = SubCommand::with_name(SubCommandName::METRICS)
         .about("Gets monitoring metrics");
 
-    let subcommand_events_publish = SubCommand::with_name(SubCommandName::EVENT_PUBLISH).about("Publish events");
+    let subcommand_events_publish = SubCommand::with_name(SubCommandName::EVENT_PUBLISH)
+        .about("Publish one or more events")
+        .arg(Arg::with_name(ArgName::EVENT_PUBLISH_NAME).required(true).index(1).help("Name of the Event Type"))
+        .arg(Arg::with_name(ArgName::EVENT_PUBLISH_JSON_BODY)
+            .required(true)
+            .index(2)
+            .help("Body of one or more events in JSON format")
+            .validator(command_event_publish::validate_json_body)
+        );
 
     let subcommand_events = SubCommand::with_name(SubCommandName::EVENT).about("Events of a certain type").subcommand(subcommand_events_publish);
 
@@ -94,8 +108,20 @@ fn main() {
 
     let mut application = Application::new();
 
-    match matches.subcommand_name() {
-        Some(SubCommandName::METRICS) => command_metrics::run(server_info, &mut application),
-        _ => panic!("No subcommand is provided, but clap should have handled this already!")
+    if let Some(_) = matches.subcommand_matches(SubCommandName::METRICS) {
+        command_metrics::run(&server_info, &mut application)
+    } else if let Some(matches) = matches.subcommand_matches(SubCommandName::EVENT) {
+        if let Some(matches) = matches.subcommand_matches(SubCommandName::EVENT_PUBLISH) {
+            command_event_publish::run(
+                &server_info,
+                &mut application,
+                matches.value_of(ArgName::EVENT_PUBLISH_NAME).expect("Non-optional argument should have been caught by clap if missing"),
+                matches.value_of(ArgName::EVENT_PUBLISH_JSON_BODY).expect("Non-optional argument should have been caught by clap if missing")
+            )
+        } else {
+            panic!("No command match!")
+        }
+    } else {
+        panic!("No command matched!")
     }
 }

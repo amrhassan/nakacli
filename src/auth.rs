@@ -1,5 +1,5 @@
 
-use fail::{Failure, failure};
+use output::{Failure, failure};
 use std::process::Command;
 
 /// Executes the zign command
