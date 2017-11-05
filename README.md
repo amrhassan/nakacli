@@ -1,5 +1,6 @@
 # nakacli #
 [![Build Status](https://travis-ci.org/amrhassan/nakacli.svg?branch=master)](https://travis-ci.org/amrhassan/nakacli)
+[![Released Version](https://img.shields.io/crates/v/nakacli.svg)](https://crates.io/crates/nakacli)
 
 CLI Client for [Nakadi](https://zalando.github.io/nakadi/)
 
@@ -25,7 +26,7 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 - [x] [Zign](https://github.com/zalando-stups/zign) authentication
 - [ ] Event type creation
 - [ ] Even type deletion
-- [ ] Publishing events
+- [x] Publishing events
 - [ ] Creating subscriptions
 - [ ] Stream-listening on events from a subscription
 # Usage #
