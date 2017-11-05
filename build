@@ -18,5 +18,6 @@ build() {
 	mv *.bz2 *.sha256 target
 }
 
+rustup update
 build "Mac OS" x86_64-apple-darwin
 build "Linux" x86_64-unknown-linux-gnu
