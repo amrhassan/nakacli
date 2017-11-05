@@ -6,13 +6,18 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate ansi_term;
 extern crate clap;
+extern crate serde;
 extern crate serde_json;
+
+#[macro_use]
+extern crate serde_derive;
 
 mod app;
 mod http;
 mod server;
 mod command_metrics;
 mod command_event_publish;
+mod command_event_stream;
 mod auth;
 mod output;
 
@@ -38,12 +43,14 @@ fn main() {
         const METRICS: &'static str = "metrics";
         const EVENT: &'static str = "event";
         const EVENT_PUBLISH: &'static str = "publish";
+        const EVENT_STREAM: &'static str = "stream";
     }
 
     struct ArgName;
     impl ArgName {
         const EVENT_PUBLISH_NAME: &'static str = "name";
         const EVENT_PUBLISH_JSON_BODY: &'static str = "json-body";
+        const EVENT_STREAM_NAME: &'static str = "name";
     }
 
     let option_bearer_token = Arg::with_name(OptionName::BEARER_TOKEN)
@@ -80,7 +87,13 @@ fn main() {
             .validator(command_event_publish::validate_json_body)
         );
 
-    let subcommand_events = SubCommand::with_name(SubCommandName::EVENT).about("Events of a certain type").subcommand(subcommand_events_publish);
+    let subcommand_events_stream = SubCommand::with_name(SubCommandName::EVENT_STREAM)
+        .about("Stream-listen on published events")
+        .arg(Arg::with_name(ArgName::EVENT_STREAM_NAME).required(true).index(1).help("Name of the Event Type"));
+
+    let subcommand_events = SubCommand::with_name(SubCommandName::EVENT).about("Events of a certain type")
+        .subcommand(subcommand_events_publish)
+        .subcommand(subcommand_events_stream);
 
     let app = App::new("CLI Client for Nakadi")
         .setting(AppSettings::SubcommandRequired)
@@ -117,6 +130,12 @@ fn main() {
                 &mut application,
                 matches.value_of(ArgName::EVENT_PUBLISH_NAME).expect("Non-optional argument should have been caught by clap if missing"),
                 matches.value_of(ArgName::EVENT_PUBLISH_JSON_BODY).expect("Non-optional argument should have been caught by clap if missing")
+            )
+        } else if let Some(matches) = matches.subcommand_matches(SubCommandName::EVENT_STREAM) {
+            command_event_stream::run(
+                &server_info,
+                &mut application,
+                matches.value_of(ArgName::EVENT_STREAM_NAME).expect("Non-optional argument should have been caught by clap if missing")
             )
         } else {
             panic!("No command match!")

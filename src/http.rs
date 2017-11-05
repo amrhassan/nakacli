@@ -42,7 +42,7 @@ pub fn read_full_resp_body_utf8(response: hyper::Response) -> impl Future<Item=S
         .body()
         .concat2()
         .map_err(|err| failure("HTTP error", err))
-        .and_then(|chunk| future::result(String::from_utf8(chunk.into_iter().collect()).map_err(|err| failure("UTF-8 decoding failure", err))))
+        .and_then(|chunk| String::from_utf8(chunk.into_iter().collect()).map_err(|err| failure("UTF-8 decoding failure", err)))
 }
 
 pub fn execute_request(http_client: &HttpClient, request: Request) -> impl Future<Item=Response, Error=Failure> {

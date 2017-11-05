@@ -16,7 +16,7 @@ pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_stat
     match result {
         Ok((status_code, ref output)) if status_code == expected_status_code => {
             if !output.is_empty() {
-                println!("{}", pretty_json(&output));
+                print_json(&output);
             }
         },
         Ok((_, output)) => {
@@ -26,6 +26,14 @@ pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_stat
             die(1, err);
         }
     }
+}
+
+pub fn print_json(result: &str) {
+    println!("{}", pretty_json(result))
+}
+
+pub fn print_json_value(value: &Value) {
+    println!("{}", to_string_pretty(value).expect("Failed to serialize a JSON value"))
 }
 
 /// Canonical representation of error message
