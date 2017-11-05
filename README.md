@@ -33,10 +33,7 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 # Usage Examples #
 
 ## Publishing an event ##
-To publish an event of the type named `special-event` with the example JSON data:
-```json
-{"n1": 55, "quantity": 800, "details": "The event has happened"}
-```
+To publish an event of the type named `special-event` with the some JSON data as the event:
 ```bash
 nakacli event publish special-event '{"n1": 55, "quantity": 800, "details": "The event has happened"}'
 ```
@@ -49,7 +46,7 @@ nakacli event stream special-event
 ```
 
 ## Authorization ##
-You could specify a Bearer token via the `--bearer-token` flag or the `BEARER_TOKEN` environment variable.
+For any command, you could specify a Bearer token via the `--bearer-token` flag or the `BEARER_TOKEN` environment variable.
 
 ```bash
 nakacli --bearer-token=(secret_token) metrics
@@ -63,5 +60,6 @@ If you have [Zign](https://github.com/zalando-stups/zign) set up, you can use it
 ```bash
 nakacli --zign metrics
 ```
+
 ## More ##
 Check `nakacli --help` for a full list of all the supported commands, their options, flags and arguments.
