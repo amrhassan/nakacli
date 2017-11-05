@@ -64,4 +64,4 @@ If you have [Zign](https://github.com/zalando-stups/zign) set up, you can use it
 nakacli --zign metrics
 ```
 ## More ##
-Chec `nakacli --help` for a full list of all the supported commands, their options, flags and arguments.
+Check `nakacli --help` for a full list of all the supported commands, their options, flags and arguments.
