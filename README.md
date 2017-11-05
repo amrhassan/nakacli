@@ -27,6 +27,7 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 - [ ] Event type creation
 - [ ] Even type deletion
 - [x] Publishing events
+- [x] Stream published events of a certain type
 - [ ] Creating subscriptions
 - [ ] Stream-listening on events from a subscription
 # Usage Examples #
@@ -40,6 +41,12 @@ To publish an event of the type named `special-event` with the example JSON data
 nakacli event publish special-event '{"n1": 55, "quantity": 800, "details": "The event has happened"}'
 ```
 The JSON body can be a JSON Object with a single event's data or a JSON Array containing a JSON Object for each event to be published.
+
+## Streaming published events ##
+To stream the published events for the event type `special-event`:
+```bash
+nakacli event stream special-event
+```
 
 ## Authorization ##
 You could specify a Bearer token via the `--bearer-token` flag or the `BEARER_TOKEN` environment variable.
