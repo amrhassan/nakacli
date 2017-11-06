@@ -48,9 +48,9 @@ fn main() {
 
     struct ArgName;
     impl ArgName {
-        const EVENT_PUBLISH_NAME: &'static str = "name";
+        const EVENT_PUBLISH_TYPE: &'static str = "event-type";
         const EVENT_PUBLISH_JSON_BODY: &'static str = "json-body";
-        const EVENT_STREAM_NAME: &'static str = "name";
+        const EVENT_STREAM_TYPE: &'static str = "event-type";
     }
 
     let option_bearer_token = Arg::with_name(OptionName::BEARER_TOKEN)
@@ -63,7 +63,7 @@ fn main() {
 
     let option_nakadi_url = Arg::with_name(OptionName::NAKADI_URL)
         .long("url")
-        .value_name("NAKADI_URL_BASE")
+        .value_name("NAKADI_URL")
         .help("scheme://hostname:[port] of the Nakadi server")
         .env("NAKADI_URL").global(true);
 
@@ -79,7 +79,7 @@ fn main() {
 
     let subcommand_events_publish = SubCommand::with_name(SubCommandName::EVENT_PUBLISH)
         .about("Publish one or more events")
-        .arg(Arg::with_name(ArgName::EVENT_PUBLISH_NAME).required(true).index(1).help("Name of the Event Type"))
+        .arg(Arg::with_name(ArgName::EVENT_PUBLISH_TYPE).required(true).index(1).help("Name of the Event Type"))
         .arg(Arg::with_name(ArgName::EVENT_PUBLISH_JSON_BODY)
             .required(true)
             .index(2)
@@ -89,7 +89,7 @@ fn main() {
 
     let subcommand_events_stream = SubCommand::with_name(SubCommandName::EVENT_STREAM)
         .about("Stream-listen on published events")
-        .arg(Arg::with_name(ArgName::EVENT_STREAM_NAME).required(true).index(1).help("Name of the Event Type"));
+        .arg(Arg::with_name(ArgName::EVENT_STREAM_TYPE).required(true).index(1).help("Name of the Event Type"));
 
     let subcommand_events = SubCommand::with_name(SubCommandName::EVENT).about("Events of a certain type")
         .subcommand(subcommand_events_publish)
@@ -128,14 +128,14 @@ fn main() {
             command_event_publish::run(
                 &server_info,
                 &mut application,
-                matches.value_of(ArgName::EVENT_PUBLISH_NAME).expect("Non-optional argument should have been caught by clap if missing"),
+                matches.value_of(ArgName::EVENT_PUBLISH_TYPE).expect("Non-optional argument should have been caught by clap if missing"),
                 matches.value_of(ArgName::EVENT_PUBLISH_JSON_BODY).expect("Non-optional argument should have been caught by clap if missing")
             )
         } else if let Some(matches) = matches.subcommand_matches(SubCommandName::EVENT_STREAM) {
             command_event_stream::run(
                 &server_info,
                 &mut application,
-                matches.value_of(ArgName::EVENT_STREAM_NAME).expect("Non-optional argument should have been caught by clap if missing")
+                matches.value_of(ArgName::EVENT_STREAM_TYPE).expect("Non-optional argument should have been caught by clap if missing")
             )
         } else {
             panic!("No command match!")

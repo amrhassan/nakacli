@@ -8,8 +8,8 @@ use output::{die, failure, print_json_value};
 use futures::Stream;
 use serde_json::{Value, Map, from_str};
 
-pub fn run(server_info: &ServerInfo, application: &mut Application, name: &str) {
-    let path = format!("/event-types/{}/events", name);
+pub fn run(server_info: &ServerInfo, application: &mut Application, event_type: &str) {
+    let path = format!("/event-types/{}/events", event_type);
     let method = Method::Get;
     let body = None;
     let request = build_request(method, &path, server_info, body);

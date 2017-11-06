@@ -6,8 +6,8 @@ use http;
 use hyper::{Method, StatusCode};
 use output;
 
-pub fn run(server_info: &ServerInfo, application: &mut Application, name: &str, json_body: &str) {
-    let path = format!("/event-types/{}/events", name);
+pub fn run(server_info: &ServerInfo, application: &mut Application, event_type: &str, json_body: &str) {
+    let path = format!("/event-types/{}/events", event_type);
     let body = {
         let decoded = serde_json::from_str::<serde_json::Value>(json_body).expect("Failed to JSON-decode text that was validated to be JSON by clap");
         let json_array = if decoded.is_object() {
