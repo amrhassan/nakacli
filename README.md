@@ -43,7 +43,7 @@ Starts streaming published events of type `<event-type>` to STDOUT. Should never
 Prints the Nakadi server metrics.
 
 ## Global options/flags ##
-### `--bearer-token` and `--zign` ###
+### `--bearer-token <TOKEN>` and `--zign` ###
 For any command, you can specify a Bearer token via the `--bearer-token <TOKEN>` option or the `BEARER_TOKEN` environment variable.
 
 If you have [Zign](https://github.com/zalando-stups/zign) set up, you can use it by simply passing the `--zign` flag.
