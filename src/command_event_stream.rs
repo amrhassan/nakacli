@@ -8,7 +8,7 @@ use output::{die, failure, print_json_value};
 use futures::Stream;
 use serde_json::{Value, Map, from_str};
 
-pub fn run(server_info: &ServerInfo, application: &mut Application, event_type: &str) {
+pub fn run(server_info: &ServerInfo, application: &mut Application, event_type: &str, pretty: bool) {
     let path = format!("/event-types/{}/events", event_type);
     let method = Method::Get;
     let body = None;
@@ -45,7 +45,7 @@ pub fn run(server_info: &ServerInfo, application: &mut Application, event_type: 
 
                 if let Some(events) = batch.events {
                     for event in events {
-                        print_json_value(&Value::Object(event))
+                        print_json_value(&Value::Object(event), pretty)
                     }
                 }
 

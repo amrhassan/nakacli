@@ -1,6 +1,6 @@
 
 use serde_json;
-use serde_json::{Value, to_string_pretty, from_str};
+use serde_json::{Value, to_string_pretty, from_str, to_string};
 use hyper::StatusCode;
 use ansi_term::Colour;
 use std::fmt::{Display, Formatter};
@@ -12,15 +12,19 @@ pub fn die(exit_code: i32, failure: Failure) -> ! {
     exit(exit_code)
 }
 
-pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_status_code: StatusCode) {
+pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_status_code: StatusCode, pretty: bool) {
     match result {
         Ok((status_code, ref output)) if status_code == expected_status_code => {
             if !output.is_empty() {
-                print_json(&output);
+                print_json(&output, pretty);
             }
         },
         Ok((_, output)) => {
-            die(1, failureln("Unexpected response:", pretty_json(&output)));
+            if pretty {
+                die(1, failureln("Unexpected response:", pretty_json(&output)));
+            } else {
+                die(1, failure("Unexpected response:", &output));
+            }
         }
         Err(err) => {
             die(1, err);
@@ -28,12 +32,20 @@ pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_stat
     }
 }
 
-pub fn print_json(result: &str) {
-    println!("{}", pretty_json(result))
+pub fn print_json(result: &str, pretty: bool) {
+    if pretty {
+        println!("{}", pretty_json(result))
+    } else {
+        println!("{}", result)
+    }
 }
 
-pub fn print_json_value(value: &Value) {
-    println!("{}", to_string_pretty(value).expect("Failed to serialize a JSON value"))
+pub fn print_json_value(value: &Value, pretty: bool) {
+    if pretty {
+        println!("{}", to_string_pretty(value).expect("Failed to serialize a JSON value"))
+    } else {
+        println!("{}", to_string(value).expect("Failed to serialize a JSON value"))
+    }
 }
 
 /// Canonical representation of error message

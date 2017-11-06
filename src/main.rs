@@ -29,7 +29,8 @@ fn main() {
 
     struct FlagName;
     impl FlagName {
-        const ZIGN: &'static str = "zign";
+        const ZIGN:         &'static str = "zign";
+        const PRETTY:       &'static str = "pretty";
     }
 
     struct OptionName;
@@ -74,6 +75,12 @@ fn main() {
         .global(true)
         .conflicts_with(OptionName::BEARER_TOKEN);
 
+    let flag_pretty = Arg::with_name(FlagName::PRETTY)
+        .long("pretty")
+        .help("Prints pretty JSON output")
+        .global(true)
+        .takes_value(false);
+
     let subcommand_metrics = SubCommand::with_name(SubCommandName::METRICS)
         .about("Gets monitoring metrics");
 
@@ -100,6 +107,7 @@ fn main() {
         .arg(option_bearer_token)
         .arg(option_nakadi_url)
         .arg(flag_zign)
+        .arg(flag_pretty)
         .subcommand(subcommand_metrics)
         .subcommand(subcommand_events);
 
@@ -114,6 +122,8 @@ fn main() {
             server::Authorization::None
         };
 
+    let pretty = matches.occurrences_of(FlagName::PRETTY) > 0;
+
     let server_info = ServerInfo {
         url_base: matches.value_of(OptionName::NAKADI_URL).unwrap_or("http://localhost"),
         authorization,
@@ -122,20 +132,22 @@ fn main() {
     let mut application = Application::new();
 
     if let Some(_) = matches.subcommand_matches(SubCommandName::METRICS) {
-        command_metrics::run(&server_info, &mut application)
+        command_metrics::run(&server_info, &mut application, pretty)
     } else if let Some(matches) = matches.subcommand_matches(SubCommandName::EVENT) {
         if let Some(matches) = matches.subcommand_matches(SubCommandName::EVENT_PUBLISH) {
             command_event_publish::run(
                 &server_info,
                 &mut application,
                 matches.value_of(ArgName::EVENT_PUBLISH_TYPE).expect("Non-optional argument should have been caught by clap if missing"),
-                matches.value_of(ArgName::EVENT_PUBLISH_JSON_BODY).expect("Non-optional argument should have been caught by clap if missing")
+                matches.value_of(ArgName::EVENT_PUBLISH_JSON_BODY).expect("Non-optional argument should have been caught by clap if missing"),
+                pretty
             )
         } else if let Some(matches) = matches.subcommand_matches(SubCommandName::EVENT_STREAM) {
             command_event_stream::run(
                 &server_info,
                 &mut application,
-                matches.value_of(ArgName::EVENT_STREAM_TYPE).expect("Non-optional argument should have been caught by clap if missing")
+                matches.value_of(ArgName::EVENT_STREAM_TYPE).expect("Non-optional argument should have been caught by clap if missing"),
+                pretty
             )
         } else {
             panic!("No command match!")

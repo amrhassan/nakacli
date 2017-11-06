@@ -6,7 +6,7 @@ use http;
 use hyper::{Method, StatusCode};
 use output;
 
-pub fn run(server_info: &ServerInfo, application: &mut Application, event_type: &str, json_body: &str) {
+pub fn run(server_info: &ServerInfo, application: &mut Application, event_type: &str, json_body: &str, pretty: bool) {
     let path = format!("/event-types/{}/events", event_type);
     let body = {
         let decoded = serde_json::from_str::<serde_json::Value>(json_body).expect("Failed to JSON-decode text that was validated to be JSON by clap");
@@ -28,7 +28,7 @@ pub fn run(server_info: &ServerInfo, application: &mut Application, event_type: 
         Some(&body)
     );
     let result = application.core.run(action);
-    output::final_result(result, StatusCode::Ok)
+    output::final_result(result, StatusCode::Ok, pretty)
 }
 
 pub fn validate_json_body(value: String) -> Result<(), String> {
