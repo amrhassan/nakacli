@@ -39,6 +39,9 @@ Publishes one or more events of the type `<event-type>`. The `<json-body>` can b
 ### `nakacli event stream [FLAGS] [OPTIONS] <event-type>` ###
 Starts streaming published events of type `<event-type>` to STDOUT. Should never stop unless interrupted by the user.
 
+### `nakacli metrics [FLAGS] [OPTIONS]` ###
+Prints the Nakadi server metrics.
+
 ## Global options/flags ##
 ### `--bearer-token` and `--zign` ###
 For any command, you can specify a Bearer token via the `--bearer-token <TOKEN>` option or the `BEARER_TOKEN` environment variable.
