@@ -41,7 +41,7 @@ Starts streaming published events of type `<event-type>` to STDOUT. Should never
 
 ## Global flags ##
 ### `--bearer-token` and `--zign` ###
-For any command, you can specify an OAuth2 Bearer token via the `--bearer-token` option or the `BEARER_TOKEN` environment variable.
+For any command, you can specify a Bearer token via the `--bearer-token` option or the `BEARER_TOKEN` environment variable.
 
 If you have [Zign](https://github.com/zalando-stups/zign) set up, you can use it by simply passing the `--zign` flag.
 
