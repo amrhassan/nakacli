@@ -30,36 +30,20 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 - [x] Stream published events of a certain type
 - [ ] Creating subscriptions
 - [ ] Stream-listening on events from a subscription
-# Usage Examples #
 
-## Publishing an event ##
-To publish an event of the type named `special-event` with the some JSON data as the event:
-```bash
-nakacli event publish special-event '{"n1": 55, "quantity": 800, "details": "The event has happened"}'
-```
-The JSON body can be a JSON Object with a single event's data or a JSON Array containing a JSON Object for each event to be published.
+# Usage #
+## Commands ##
+### `nakacli event publish [FLAGS] [OPTIONS] <event-type> <json-body>` ###
+Publishes one or more events of the type `<event-type>`. The `<json-body>` can be the full body of a single event as a JSON object, or a JSON array containing an object each for each event to be published.
 
-## Streaming published events ##
-To stream the published events for the event type `special-event`:
-```bash
-nakacli event stream special-event
-```
+### `nakacli event stream [FLAGS] [OPTIONS] <event-type>` ###
+Starts streaming published events of type `<event-type>` to STDOUT. Should never stop unless interrupted by the user.
 
-## Authorization ##
-For any command, you could specify a Bearer token via the `--bearer-token` flag or the `BEARER_TOKEN` environment variable.
-
-```bash
-nakacli --bearer-token=(secret_token) metrics
-```
-```bash
-export BEARER_TOKEN=(secret_token)
-nakacli metrics
-```
+## Global flags ##
+### `--bearer-token` and `--zign` ###
+For any command, you can specify an OAuth2 Bearer token via the `--bearer-token` option or the `BEARER_TOKEN` environment variable.
 
 If you have [Zign](https://github.com/zalando-stups/zign) set up, you can use it by simply passing the `--zign` flag.
-```bash
-nakacli --zign metrics
-```
 
 ## More ##
-Check `nakacli --help` for a full list of all the supported commands, their options, flags and arguments.
+Check `nakacli help` for a full list of all the supported commands, their options, flags and arguments.
