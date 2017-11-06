@@ -51,5 +51,8 @@ If you have [Zign](https://github.com/zalando-stups/zign) set up, you can use it
 ### `--url <NAKADI_URL>` ###
 Specifies the URL to the Nakadi server in the format `scheme://[auth:]hostname:[port]`. It can also be set via the `NAKADI_URL` environment variable.
 
+### `--pretty` ###
+Makes JSON output properly-indented for easier human readability.
+
 ## More ##
 Check `nakacli help` for a full list of all the supported commands, their options, flags and arguments.
