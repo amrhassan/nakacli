@@ -34,7 +34,7 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 # Usage #
 ## Commands ##
 ### `nakacli event publish [FLAGS] [OPTIONS] <event-type> <json-body>` ###
-Publishes one or more events of the type `<event-type>`. The `<json-body>` can be the full body of a single event as a JSON object, or a JSON array containing an object each for each event to be published.
+Publishes one or more events of the type `<event-type>`. The `<json-body>` can be the full body of a single event as a JSON object, or a JSON array containing an object for each event to be published.
 
 ### `nakacli event stream [FLAGS] [OPTIONS] <event-type>` ###
 Starts streaming published events of type `<event-type>` to STDOUT. Should never stop unless interrupted by the user.
