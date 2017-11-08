@@ -23,7 +23,7 @@ fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
     }
 }
 
-pub fn sub_command() -> App<'static, 'static> {
+pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME)
         .about("Stream-listen on published events")
         .arg(Arg::with_name(ARG_EVENT_TYPE).required(true).index(1).help("Name of the Event Type"))

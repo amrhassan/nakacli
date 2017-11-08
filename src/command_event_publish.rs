@@ -12,7 +12,7 @@ pub const NAME: &'static str = "publish";
 const ARG_EVENT_TYPE: &'static str = "event-type";
 const ARG_JSON_BODY: &'static str = "json-body";
 
-pub fn sub_command() -> App<'static, 'static> {
+pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME)
         .about("Publish one or more events")
         .arg(Arg::with_name(ARG_EVENT_TYPE).required(true).index(1).help("Name of the Event Type"))

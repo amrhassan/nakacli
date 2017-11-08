@@ -9,18 +9,11 @@ use clap::*;
 
 pub const NAME: &'static str = "metrics";
 
-pub fn sub_command() -> App<'static, 'static> {
+pub  fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME).about("Gets monitoring metrics")
 }
 
-struct Params;
-
-fn extract_params(_matches: &ArgMatches) -> Params {
-    Params {}
-}
-
-pub fn run(application: &mut Application, global_params: &GlobalParams, _matches: &ArgMatches) {
-    let _params = extract_params(_matches);
+pub fn run(application: &mut Application, global_params: &GlobalParams) {
     let server_info = ServerInfo::from_params(global_params);
     let action = http::execute_and_read_full_resp_body_utf8(
         &application.http_client,

@@ -40,8 +40,8 @@ fn main() {
 
     let mut application = Application::new();
 
-    if let Some(matches) = matches.subcommand_matches(command_metrics::NAME) {
-        command_metrics::run(&mut application, &global_params, matches)
+    if let Some(_) = matches.subcommand_matches(command_metrics::NAME) {
+        command_metrics::run(&mut application, &global_params)
     } else if let Some(matches) = matches.subcommand_matches(command_event::NAME) {
         command_event::run(&mut application, &global_params, matches)
     } else {
