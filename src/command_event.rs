@@ -20,6 +20,6 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
     } else if let Some(matches) = matches.subcommand_matches(command_event_stream::NAME) {
         command_event_stream::run(application, global_params, matches)
     } else {
-        panic!("A subcommand was not provided!")
+        panic!("No command matched! Should have been caught by clap")
     }
 }

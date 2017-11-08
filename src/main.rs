@@ -45,7 +45,7 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches(command_event::NAME) {
         command_event::run(&mut application, &global_params, matches)
     } else {
-        panic!("No command matched!")
+        panic!("No command matched! Should have been caught by clap")
     }
 }
 
