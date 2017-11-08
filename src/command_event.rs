@@ -2,7 +2,6 @@
 use clap::{App, SubCommand, ArgMatches};
 use command_event_publish;
 use command_event_stream;
-use server::ServerInfo;
 use app::Application;
 use global::GlobalParams;
 
@@ -14,23 +13,11 @@ pub fn sub_command() -> App<'static, 'static> {
         .subcommand(command_event_stream::sub_command())
 }
 
-pub struct Params<'a>{
-    matches: &'a ArgMatches<'a>
-}
-
-pub fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
-    Params {
-        matches
-    }
-}
-
-pub fn run(server_info: &ServerInfo, application: &mut Application, global_params: &GlobalParams, params: Params) {
-    if let Some(matches) = params.matches.subcommand_matches(command_event_publish::NAME) {
-        let params = command_event_publish::extract_params(matches);
-        command_event_publish::run(server_info, application, &params, global_params)
-    } else if let Some(matches) = params.matches.subcommand_matches(command_event_stream::NAME) {
-        let params = command_event_stream::extract_params(matches);
-        command_event_stream::run(server_info, application, &params, global_params)
+pub fn run(application: &mut Application, global_params: &GlobalParams, matches: &ArgMatches) {
+    if let Some(matches) = matches.subcommand_matches(command_event_publish::NAME) {
+        command_event_publish::run(application, global_params, matches)
+    } else if let Some(matches) = matches.subcommand_matches(command_event_stream::NAME) {
+        command_event_stream::run(application, global_params, matches)
     } else {
         panic!("A subcommand was not provided!")
     }

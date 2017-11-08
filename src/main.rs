@@ -25,7 +25,6 @@ mod global;
 
 use clap::{App, AppSettings};
 use app::Application;
-use server::ServerInfo;
 
 fn main() {
 
@@ -39,28 +38,12 @@ fn main() {
 
     let global_params = global::extract_global_params(&matches);
 
-    let authorization =
-        if global_params.zign {
-            server::Authorization::Zign
-        } else if let Some(bearer_token) = global_params.bearer_token {
-            server::Authorization::BearerToken(bearer_token)
-        } else {
-            server::Authorization::None
-        };
-
-    let server_info = ServerInfo {
-        url_base: global_params.nakadi_url.unwrap_or("http://localhost"),
-        authorization,
-    };
-
     let mut application = Application::new();
 
     if let Some(matches) = matches.subcommand_matches(command_metrics::NAME) {
-        let params = command_metrics::extract_params(matches);
-        command_metrics::run(&server_info, &mut application, &global_params, params)
+        command_metrics::run(&mut application, &global_params, matches)
     } else if let Some(matches) = matches.subcommand_matches(command_event::NAME) {
-        let params = command_event::extract_params(matches);
-        command_event::run(&server_info, &mut application, &global_params, params)
+        command_event::run(&mut application, &global_params, matches)
     } else {
         panic!("No command matched!")
     }

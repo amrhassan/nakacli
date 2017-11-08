@@ -13,11 +13,11 @@ use clap::{ArgMatches, App, SubCommand, Arg};
 pub const NAME: &'static str = "stream";
 const ARG_EVENT_TYPE: &'static str = "event-type";
 
-pub struct Params<'a> {
+struct Params<'a> {
     event_type: &'a str
 }
 
-pub fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
+fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
     Params {
         event_type: matches.value_of(ARG_EVENT_TYPE).expect("Non-optional argument should have been caught by clap if missing")
     }
@@ -29,11 +29,15 @@ pub fn sub_command() -> App<'static, 'static> {
         .arg(Arg::with_name(ARG_EVENT_TYPE).required(true).index(1).help("Name of the Event Type"))
 }
 
-pub fn run(server_info: &ServerInfo, application: &mut Application, params: &Params, global_flags: &GlobalParams) {
+pub fn run(application: &mut Application, global_params: &GlobalParams, matches: &ArgMatches) {
+
+    let params = extract_params(matches);
+    let server_info = ServerInfo::from_params(global_params);
+
     let path = format!("/event-types/{}/events", params.event_type);
     let method = Method::Get;
     let body = None;
-    let request = build_request(method, &path, server_info, body);
+    let request = build_request(method, &path, &server_info, body);
     let http_client = &application.http_client;
 
     let mut buffer = String::new();
@@ -66,7 +70,7 @@ pub fn run(server_info: &ServerInfo, application: &mut Application, params: &Par
 
                 if let Some(events) = batch.events {
                     for event in events {
-                        print_json_value(&Value::Object(event), global_flags.pretty)
+                        print_json_value(&Value::Object(event), global_params.pretty)
                     }
                 }
 
