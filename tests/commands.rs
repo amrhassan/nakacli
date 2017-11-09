@@ -80,24 +80,23 @@ impl Service for MockNakadi {
     type Future = Box<Future<Item=Self::Response, Error=Self::Error>>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
-        match (req.method(), req.path()) {
-            _ if req.method() == &self.expected_method && req.path() == &self.expected_path => {
-                let expected_request_body = self.expected_request_body.clone();
-                let response_body = self.response_body.clone();
-                let status_code = self.status_code.clone();
+        if req.method() == &self.expected_method && req.path() == &self.expected_path {
+            let expected_request_body = self.expected_request_body.clone();
+            let response_body = self.response_body.clone();
+            let status_code = self.status_code.clone();
 
-                Box::new(req.body().concat2().map(move |chunk| {
-                    let request_body_bytes: Vec<u8> = chunk.into_iter().collect();
-                    let request_body = String::from_utf8(request_body_bytes).expect("Failed to UTF-8 decode request body");
-                    if request_body == expected_request_body {  // TODO: Maybe be more robust about checking JSON bodies for equality to avoid inequality due to different formatting
-                        Response::new().with_status(status_code).with_body(response_body)
-                    } else {
-                        println!("ERROR: Request body: {} does not equal expected body: {}", request_body, expected_request_body);
-                        Response::new().with_status(StatusCode::InternalServerError)
-                    }
-                }))
-            },
-            _ => Box::new(future::ok(Response::new().with_status(StatusCode::InternalServerError)))
+            Box::new(req.body().concat2().map(move |chunk| {
+                let request_body_bytes: Vec<u8> = chunk.into_iter().collect();
+                let request_body = String::from_utf8(request_body_bytes).expect("Failed to UTF-8 decode request body");
+                if request_body == expected_request_body {  // TODO: Maybe be more robust about checking JSON bodies for equality to avoid inequality due to different formatting
+                    Response::new().with_status(status_code).with_body(response_body)
+                } else {
+                    println!("ERROR: Request body: {} does not equal expected body: {}", request_body, expected_request_body);
+                    Response::new().with_status(StatusCode::InternalServerError)
+                }
+            }))
+        } else {
+            Box::new(future::ok(Response::new().with_status(StatusCode::InternalServerError)))
         }
     }
 }
