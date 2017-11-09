@@ -4,3 +4,5 @@ rust:
 os:
   - linux
   - osx
+script:
+  - cargo test -- --test-threads=1  # Integration tests need to be run sequentially
