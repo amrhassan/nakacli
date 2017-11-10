@@ -3,12 +3,13 @@ use futures::future;
 use server::ServerInfo;
 use futures::Future;
 use app::Application;
-use hyper::Method;
-use output::{die, failure, print_json_value};
+use hyper::{Method, Response};
+use output::{die, failure, print_json_value, Failure};
 use futures::Stream;
 use serde_json::{Value, Map, from_str};
 use global::*;
 use clap::{ArgMatches, App, SubCommand, Arg};
+use futures::stream;
 
 pub const NAME: &'static str = "stream";
 const ARG_EVENT_TYPE: &'static str = "event-type";
@@ -30,7 +31,6 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
 }
 
 pub fn run(application: &mut Application, global_params: &GlobalParams, matches: &ArgMatches) {
-
     let params = extract_params(matches);
     let server_info = ServerInfo::from_params(global_params);
 
@@ -40,49 +40,48 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
     let request = build_request(method, &path, &server_info, body);
     let http_client = &application.http_client;
 
-    let mut buffer = String::new();
-
     let action = future::result(request)
         .and_then(move |r| execute_request(http_client, r))
-        .and_then(|resp| {
-            let stream = resp.body();
-            stream.for_each(|chunk| {
+        .and_then(|resp| process_response(resp, global_params));
+    match application.core.run(action) {
+        Err(err) => die(1, err),
+        Ok(_) => ()
+    }
+}
 
-                // Add new chunk to buffer
-                buffer.extend(String::from_utf8(chunk.into_iter().collect()));
-
-                // Split off first line from rest of buffer
-                let line_ends_at = {
-                    match buffer.find('\n') {
-                        None => return Ok(()),
-                        Some(n) => n
-                    }
-                };
-
-                let line = buffer.split_at(line_ends_at).0.to_owned();
+fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>) -> impl Future<Item=(), Error=Failure> + 'a {
+    resp.body()
+        .map(|chunk| {
+            let bytes: Vec<u8> = chunk.into_iter().collect();
+            stream::iter_ok(bytes)
+        })
+        .map_err(|err| failure("Failed to stream HTTP chunks", err))
+        .flatten()
+        .fold(Vec::new(), move |acc, byte| {
+            if byte == b'\n' {
+                let line = String::from_utf8(acc).expect("Failed to UTF-8 decode the response");
 
                 let batch: EventBatch = {
                     match from_str(&line) {
-                        Err(err) => die(1, failure("Failed to decode an event stream batch (Malformed/incomplete JSON value in a single HTTP chunk?)", err)),
+                        Err(err) => die(1, failure("Failed to decode an event stream batch", err)),
                         Ok(batch) => batch
                     }
                 };
 
                 if let Some(events) = batch.events {
                     for event in events {
-                        print_json_value(&Value::Object(event), global_params.pretty)
+                        print_json_value(&Value::Object(event), global_params.clone().pretty)
                     }
                 }
 
-                // Success, now drops the line from the buffer
-                let _ = buffer.drain(..line_ends_at+1).collect::<Vec<char>>();
-                Ok(())
-            }).map_err(|err| failure("Failed to stream chunks from HTTP server", err))
-        });
-    match application.core.run(action) {
-        Err(err) => die(1, err),
-        Ok(_) => ()
-    }
+                future::ok(Vec::new())
+            } else {
+                let mut mut_acc = acc;
+                mut_acc.push(byte);
+                future::ok(mut_acc)
+            }
+        })
+        .map(|leftover_bytes| if leftover_bytes.is_empty() { panic!("Leftover bytes") })
 }
 
 #[derive(Deserialize, Debug)]
