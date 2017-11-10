@@ -48,33 +48,33 @@ fn event_publish_command() {
     shutdown.send(()).unwrap();
 }
 
-//#[test]
-//fn event_stream_command() {
-//    let response_body = "\
-//    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"no\", \"field-1\": 434234235}]}\n\
-//    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noo\", \"field-1\": 434234235}, {\"field-2\": \"nooo\", \"field-1\": 434234235}]}\n\
-//    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noooo\", \"field-1\": 434234235}]}\n\
-//    ";
-//    let expected_stdout = "\
-//    {\"field-2\": \"no\", \"field-1\": 434234235}\n\
-//    {\"field-2\": \"noo\", \"field-1\": 434234235}\n\
-//    {\"field-2\": \"nooo\", \"field-1\": 434234235}\n\
-//    {\"field-2\": \"noooo\", \"field-1\": 434234235}\n\
-//    ";
-//
-//    let event_name = "event-type-x";
-//
-//    let shutdown = spawn_mock_nakadi(Method::Post, format!("/event-types/{}/events", event_name), None, response_body.to_owned(), StatusCode::Ok);
-//
-//    Assert::main_binary()
-//        .with_args(&["--url", &format!("http://{}", MockNakadi::HOST), "event", "stream", event_name])
-//        .stdout().is(expected_stdout)
-//        .succeeds()
-//        .execute()
-//        .unwrap();
-//
-//    shutdown.send(()).unwrap();
-//}
+#[test]
+fn event_stream_command() {
+    let response_body = "\
+    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"no\", \"field-1\": 434234235}]}\n\
+    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noo\", \"field-1\": 434234235}, {\"field-2\": \"nooo\", \"field-1\": 434234235}]}\n\
+    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noooo\", \"field-1\": 434234235}]}\n\
+    ";
+    let expected_stdout = "\
+    {\"field-2\": \"no\", \"field-1\": 434234235}\n\
+    {\"field-2\": \"noo\", \"field-1\": 434234235}\n\
+    {\"field-2\": \"nooo\", \"field-1\": 434234235}\n\
+    {\"field-2\": \"noooo\", \"field-1\": 434234235}\n\
+    ";
+
+    let event_name = "event-type-x";
+
+    let shutdown = spawn_mock_nakadi(Method::Post, format!("/event-types/{}/events", event_name), None, response_body.to_owned(), StatusCode::Ok);
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", MockNakadi::HOST), "event", "stream", event_name])
+        .stdout().is(expected_stdout)
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
 
 fn spawn_mock_nakadi(
     expected_method: Method,

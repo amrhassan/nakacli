@@ -3,7 +3,7 @@ use futures::future;
 use server::ServerInfo;
 use futures::Future;
 use app::Application;
-use hyper::{Method, Response};
+use hyper::{Method, Response, StatusCode};
 use output::{die, failure, print_json_value, Failure};
 use futures::Stream;
 use serde_json::{Value, Map, from_str};
@@ -50,38 +50,42 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
 }
 
 fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>) -> impl Future<Item=(), Error=Failure> + 'a {
-    resp.body()
-        .map(|chunk| {
-            let bytes: Vec<u8> = chunk.into_iter().collect();
-            stream::iter_ok(bytes)
-        })
-        .map_err(|err| failure("Failed to stream HTTP chunks", err))
-        .flatten()
-        .fold(Vec::new(), move |acc, byte| {
-            if byte == b'\n' {
-                let line = String::from_utf8(acc).expect("Failed to UTF-8 decode the response");
+    if resp.status() != StatusCode::Ok {
+        die(1, failure("Unexpected status code", resp.status()))
+    } else {
+        resp.body()
+            .map(|chunk| {
+                let bytes: Vec<u8> = chunk.into_iter().collect();
+                stream::iter_ok(bytes)
+            })
+            .map_err(|err| failure("Failed to stream HTTP chunks", err))
+            .flatten()
+            .fold(Vec::new(), move |acc, byte| {
+                if byte == b'\n' {
+                    let line = String::from_utf8(acc).expect("Failed to UTF-8 decode the response");
 
-                let batch: EventBatch = {
-                    match from_str(&line) {
-                        Err(err) => die(1, failure("Failed to decode an event stream batch", err)),
-                        Ok(batch) => batch
-                    }
-                };
+                    let batch: EventBatch = {
+                        match from_str(&line) {
+                            Err(err) => die(1, failure("Failed to decode an event stream batch", err)),
+                            Ok(batch) => batch
+                        }
+                    };
 
-                if let Some(events) = batch.events {
-                    for event in events {
-                        print_json_value(&Value::Object(event), global_params.clone().pretty)
+                    if let Some(events) = batch.events {
+                        for event in events {
+                            print_json_value(&Value::Object(event), global_params.clone().pretty)
+                        }
                     }
+
+                    future::ok(Vec::new())
+                } else {
+                    let mut mut_acc = acc;
+                    mut_acc.push(byte);
+                    future::ok(mut_acc)
                 }
-
-                future::ok(Vec::new())
-            } else {
-                let mut mut_acc = acc;
-                mut_acc.push(byte);
-                future::ok(mut_acc)
-            }
-        })
-        .map(|leftover_bytes| if leftover_bytes.is_empty() { panic!("Leftover bytes") })
+            })
+            .map(|leftover_bytes| if leftover_bytes.is_empty() { panic!("Leftover bytes") })
+    }
 }
 
 #[derive(Deserialize, Debug)]
