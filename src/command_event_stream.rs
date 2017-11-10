@@ -45,11 +45,11 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
         .and_then(|resp| process_response(resp, global_params));
     match application.core.run(action) {
         Err(err) => die(1, err),
-        Ok(_) => ()
+        Ok(_) => die(1, failure("Stream ended abrputly!", ""))
     }
 }
 
-fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>) -> impl Future<Item=(), Error=Failure> + 'a {
+fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>) -> impl Future<Item=Vec<u8>, Error=Failure> + 'a {
     if resp.status() != StatusCode::Ok {
         die(1, failure("Unexpected status code", resp.status()))
     } else {
@@ -84,7 +84,6 @@ fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>) -> 
                     future::ok(mut_acc)
                 }
             })
-            .map(|leftover_bytes| if leftover_bytes.is_empty() { panic!("Leftover bytes") })
     }
 }
 

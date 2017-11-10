@@ -56,21 +56,20 @@ fn event_stream_command() {
     {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noooo\", \"field-1\": 434234235}]}\n\
     ";
     let expected_stdout = "\
-    {\"field-2\": \"no\", \"field-1\": 434234235}\n\
-    {\"field-2\": \"noo\", \"field-1\": 434234235}\n\
-    {\"field-2\": \"nooo\", \"field-1\": 434234235}\n\
-    {\"field-2\": \"noooo\", \"field-1\": 434234235}\n\
+    {\"field-1\":434234235,\"field-2\":\"no\"}\n\
+    {\"field-1\":434234235,\"field-2\":\"noo\"}\n\
+    {\"field-1\":434234235,\"field-2\":\"nooo\"}\n\
+    {\"field-1\":434234235,\"field-2\":\"noooo\"}\n\
     ";
 
     let event_name = "event-type-x";
 
-    let shutdown = spawn_mock_nakadi(Method::Post, format!("/event-types/{}/events", event_name), None, response_body.to_owned(), StatusCode::Ok);
+    let shutdown = spawn_mock_nakadi(Method::Get, format!("/event-types/{}/events", event_name), None, response_body.to_owned(), StatusCode::Ok);
 
     Assert::main_binary()
         .with_args(&["--url", &format!("http://{}", MockNakadi::HOST), "event", "stream", event_name])
         .stdout().is(expected_stdout)
-        .succeeds()
-        .execute()
+        .fails()
         .unwrap();
 
     shutdown.send(()).unwrap();
@@ -128,6 +127,7 @@ impl Service for MockNakadi {
                 }
             }))
         } else {
+            println!("Unexpected request: {} {}", self.expected_method, self.expected_path);
             Box::new(future::ok(Response::new().with_status(StatusCode::InternalServerError)))
         }
     }
