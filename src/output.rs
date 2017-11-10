@@ -12,6 +12,10 @@ pub fn die(exit_code: i32, failure: Failure) -> ! {
     exit(exit_code)
 }
 
+pub fn die_successfully() -> ! {
+    exit(0)
+}
+
 pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_status_code: StatusCode, pretty: bool) {
     match result {
         Ok((status_code, ref output)) if status_code == expected_status_code => {

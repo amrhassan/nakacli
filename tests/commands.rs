@@ -14,6 +14,7 @@ use futures::future;
 use std::thread;
 use futures::sync::oneshot::{channel, Sender};
 use serde_json::Value;
+use std::time::Duration;
 
 #[test]
 fn metrics_command() {
@@ -66,6 +67,8 @@ fn event_stream_command() {
 
     let shutdown = spawn_mock_nakadi(Method::Get, format!("/event-types/{}/events", event_name), None, response_body.to_owned(), StatusCode::Ok);
 
+    thread::sleep(Duration::from_secs(24*60*60));
+
     Assert::main_binary()
         .with_args(&["--url", &format!("http://{}", MockNakadi::HOST), "event", "stream", event_name])
         .stdout().is(expected_stdout)
@@ -73,6 +76,36 @@ fn event_stream_command() {
         .unwrap();
 
     shutdown.send(()).unwrap();
+}
+
+#[test]
+fn event_stream_n_command() {
+    let response_body = "\
+    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"no\", \"field-1\": 434234235}]}\n\
+    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noo\", \"field-1\": 434234235}, {\"field-2\": \"nooo\", \"field-1\": 434234235}]}\n\
+    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noooo\", \"field-1\": 434234235}]}\n\
+    ";
+    let expected_stdout = "\
+    {\"field-1\":434234235,\"field-2\":\"no\"}\n\
+    {\"field-1\":434234235,\"field-2\":\"noo\"}\n\
+    ";
+
+    let event_name = "event-type-x";
+
+    let shutdown = spawn_mock_nakadi(Method::Get, format!("/event-types/{}/events", event_name), None, response_body.to_owned(), StatusCode::Ok);
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", MockNakadi::HOST), "event", "stream", "-n2", event_name])
+        .stdout().is(expected_stdout)
+        .succeeds()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn event_publish_multiple() {
+    // TODO
 }
 
 fn spawn_mock_nakadi(

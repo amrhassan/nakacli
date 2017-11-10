@@ -4,7 +4,7 @@ use server::ServerInfo;
 use futures::Future;
 use app::Application;
 use hyper::{Method, Response, StatusCode};
-use output::{die, failure, print_json_value, Failure};
+use output::{die, failure, print_json_value, Failure, die_successfully};
 use futures::Stream;
 use serde_json::{Value, Map, from_str};
 use global::*;
@@ -13,14 +13,17 @@ use futures::stream;
 
 pub const NAME: &'static str = "stream";
 const ARG_EVENT_TYPE: &'static str = "event-type";
+const ARG_TAKE: &'static str = "take";
 
 struct Params<'a> {
-    event_type: &'a str
+    event_type: &'a str,
+    take: Option<usize>,
 }
 
 fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
     Params {
-        event_type: matches.value_of(ARG_EVENT_TYPE).expect("Non-optional argument should have been caught by clap if missing")
+        event_type: matches.value_of(ARG_EVENT_TYPE).expect("Non-optional argument should have been caught by clap if missing"),
+        take: matches.value_of(ARG_TAKE).and_then(|v| v.parse().ok()),
     }
 }
 
@@ -28,6 +31,7 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME)
         .about("Stream-listen on published events")
         .arg(Arg::with_name(ARG_EVENT_TYPE).required(true).index(1).help("Name of the Event Type"))
+        .arg(Arg::with_name(ARG_TAKE).long("take").short("n").takes_value(true).value_name("N").help("Exits after consuming N events from the stream").validator(arg_take_validator))
 }
 
 pub fn run(application: &mut Application, global_params: &GlobalParams, matches: &ArgMatches) {
@@ -42,14 +46,15 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
 
     let action = future::result(request)
         .and_then(move |r| execute_request(http_client, r))
-        .and_then(|resp| process_response(resp, global_params));
+        .and_then(|resp| process_response(resp, global_params, &params));
+
     match application.core.run(action) {
         Err(err) => die(1, err),
         Ok(_) => die(1, failure("Stream ended abrputly!", ""))
     }
 }
 
-fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>) -> impl Future<Item=Vec<u8>, Error=Failure> + 'a {
+fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>, params: &'a Params<'a>) -> impl Future<Item=(Vec<u8>, usize), Error=Failure> + 'a {
     if resp.status() != StatusCode::Ok {
         die(1, failure("Unexpected status code", resp.status()))
     } else {
@@ -60,7 +65,8 @@ fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>) -> 
             })
             .map_err(|err| failure("Failed to stream HTTP chunks", err))
             .flatten()
-            .fold(Vec::new(), move |acc, byte| {
+            .fold((Vec::new(), 0), move |(acc, i), byte| {
+
                 if byte == b'\n' {
                     let line = String::from_utf8(acc).expect("Failed to UTF-8 decode the response");
 
@@ -72,18 +78,32 @@ fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>) -> 
                     };
 
                     if let Some(events) = batch.events {
-                        for event in events {
-                            print_json_value(&Value::Object(event), global_params.clone().pretty)
+                        let event_length = events.len();
+                        if let Some(take_n) = params.take {
+                            for event in events.into_iter().take(take_n) {
+                                print_json_value(&Value::Object(event), global_params.clone().pretty)
+                            }
+                            if (i+event_length) >= take_n {
+                                die_successfully();
+                            }
                         }
+                        future::ok((Vec::new(), i+event_length))
+                    } else {
+                        future::ok((Vec::new(), i))
                     }
-
-                    future::ok(Vec::new())
                 } else {
                     let mut mut_acc = acc;
                     mut_acc.push(byte);
-                    future::ok(mut_acc)
+                    future::ok((mut_acc, i))
                 }
             })
+    }
+}
+
+fn arg_take_validator(v: String) -> Result<(), String> {
+    match v.parse::<u64>() {
+        Ok(n) if n > 0 => Ok(()),
+        _ => Err("Value should be a positive integer".to_string())
     }
 }
 
