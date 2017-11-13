@@ -19,5 +19,6 @@ build() {
 }
 
 rustup update
+cargo clean
 build "Mac OS" x86_64-apple-darwin
 build "Linux" x86_64-unknown-linux-gnu
