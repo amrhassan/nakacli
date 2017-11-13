@@ -80,7 +80,7 @@ fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>, par
                     if let Some(events) = batch.events {
                         let event_length = events.len();
                         if let Some(take_n) = params.take {
-                            for event in events.into_iter().take(take_n) {
+                            for event in events.into_iter().take(take_n-i) {
                                 print_json_value(&Value::Object(event), global_params.clone().pretty)
                             }
                             if (i+event_length) >= take_n {
