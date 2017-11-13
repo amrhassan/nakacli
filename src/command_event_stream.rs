@@ -86,6 +86,10 @@ fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>, par
                             if (i+event_length) >= take_n {
                                 die_successfully();
                             }
+                        } else {
+                            for event in events {
+                                print_json_value(&Value::Object(event), global_params.clone().pretty)
+                            }
                         }
                         future::ok((Vec::new(), i+event_length))
                     } else {

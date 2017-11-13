@@ -95,8 +95,9 @@ fn event_stream_command() {
     let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
 
     Assert::main_binary()
-        .with_args(&["--url", &format!("http://{}", HOST), "event", "stream", "-n4", "event-type-x"])
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "stream", "event-type-x"])
         .stdout().is(expected_stdout)
+        .fails()    // Because stream ends abruptly. TODO: Fix with a hanging body stream
         .unwrap();
 
     shutdown.send(()).unwrap();
