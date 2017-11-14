@@ -68,6 +68,30 @@ fn event_publish_command() {
 }
 
 #[test]
+fn event_publish_multiple_command() {
+
+    let event_bodys = "[{\"field-2\": \"noooo\", \"field-1\": 434234235}, {\"field-2\": \"yes\", \"field-1\": 6}]";
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types/event-type-x/events".to_string(),
+        expected_request_body: ExpectedRequestBody::JsonValue(serde_json::from_str("[{\"field-2\": \"noooo\", \"field-1\": 434234235}, {\"field-2\": \"yes\", \"field-1\": 6}]").expect("BAD JSON")),
+        expected_method: Method::Post,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", event_bodys])
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
 fn event_stream_command() {
 
     let response_body_factory = || "\
