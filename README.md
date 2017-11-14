@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/amrhassan/nakacli.svg?branch=master)](https://travis-ci.org/amrhassan/nakacli)
 [![Released Version](https://img.shields.io/crates/v/nakacli.svg)](https://crates.io/crates/nakacli)
 
-> **CLI Client for [Nakadi](https://zalando.github.io/nakadi/)** - Cross-platform, no-depdency minimal CLI for interacting with Nakadi
+> **CLI Client for [Nakadi](https://zalando.github.io/nakadi/)** - Cross-platform, no-dependency minimal CLI for interacting with Nakadi
 
 ## Install ##
 ### macOS ###
