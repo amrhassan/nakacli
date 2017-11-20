@@ -23,10 +23,11 @@ const HOST: &'static str = "127.0.0.1:8060";
 
 #[test]
 fn metrics_command() {
-    let metrics_response = "{\"metrics\": \"all is good\"}";
+
+    let metrics_response = json!({"metrics": "all is good"});
 
     let mocked_service = MockedService {
-        body_factory: move || "{\"metrics\": \"all is good\"}".to_string().into(),
+        body_factory: || format!("{}", json!({"metrics": "all is good"})).into(),
         expected_path: "/metrics".to_string(),
         expected_request_body: ExpectedRequestBody::None,
         expected_method: Method::Get,
@@ -37,7 +38,7 @@ fn metrics_command() {
 
     Assert::main_binary()
         .with_args(&["--url", &format!("http://{}", HOST), "metrics"])
-        .stdout().is(metrics_response)
+        .stdout().is(format!("{}", metrics_response))
         .succeeds()
         .execute()
         .unwrap();
