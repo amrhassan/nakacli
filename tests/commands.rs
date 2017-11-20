@@ -3,6 +3,8 @@
 extern crate assert_cli;
 extern crate hyper;
 extern crate futures;
+
+#[macro_use]
 extern crate serde_json;
 
 use hyper::server::{Http, Request, Response, Service};
@@ -21,10 +23,11 @@ const HOST: &'static str = "127.0.0.1:8060";
 
 #[test]
 fn metrics_command() {
-    let metrics_response = "{\"metrics\": \"all is good\"}";
+
+    let metrics_response = json!({"metrics": "all is good"});
 
     let mocked_service = MockedService {
-        body_factory: move || "{\"metrics\": \"all is good\"}".to_string().into(),
+        body_factory: || format!("{}", json!({"metrics": "all is good"})).into(),
         expected_path: "/metrics".to_string(),
         expected_request_body: ExpectedRequestBody::None,
         expected_method: Method::Get,
@@ -35,7 +38,7 @@ fn metrics_command() {
 
     Assert::main_binary()
         .with_args(&["--url", &format!("http://{}", HOST), "metrics"])
-        .stdout().is(metrics_response)
+        .stdout().is(format!("{}", metrics_response))
         .succeeds()
         .execute()
         .unwrap();
@@ -46,12 +49,12 @@ fn metrics_command() {
 #[test]
 fn event_publish_command() {
 
-    let event_body = "{\"field-2\": \"noooo\", \"field-1\": 434234235}";
+    let event_body = json!({"field-2": "noooo", "field-1": 434234235});
 
     let mocked_service = MockedService {
         body_factory: || Body::empty(),
         expected_path: "/event-types/event-type-x/events".to_string(),
-        expected_request_body: ExpectedRequestBody::JsonValue(serde_json::from_str("[{\"field-2\": \"noooo\", \"field-1\": 434234235}]").expect("BAD JSON")),
+        expected_request_body: ExpectedRequestBody::JsonValue(json!([{"field-2": "noooo", "field-1": 434234235}])),
         expected_method: Method::Post,
         status_code: StatusCode::Ok,
     };
@@ -59,7 +62,7 @@ fn event_publish_command() {
     let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
 
     Assert::main_binary()
-        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", event_body])
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", &format!("{}",event_body)])
         .succeeds()
         .execute()
         .unwrap();
@@ -70,12 +73,12 @@ fn event_publish_command() {
 #[test]
 fn event_publish_multiple_command() {
 
-    let event_bodys = "[{\"field-2\": \"noooo\", \"field-1\": 434234235}, {\"field-2\": \"yes\", \"field-1\": 6}]";
+    let event_bodys = json!([{"field-2": "noooo", "field-1": 434234235}, {"field-2": "yes", "field-1": 6}]);
 
     let mocked_service = MockedService {
         body_factory: || Body::empty(),
         expected_path: "/event-types/event-type-x/events".to_string(),
-        expected_request_body: ExpectedRequestBody::JsonValue(serde_json::from_str("[{\"field-2\": \"noooo\", \"field-1\": 434234235}, {\"field-2\": \"yes\", \"field-1\": 6}]").expect("BAD JSON")),
+        expected_request_body: ExpectedRequestBody::JsonValue(event_bodys.clone()),
         expected_method: Method::Post,
         status_code: StatusCode::Ok,
     };
@@ -83,7 +86,7 @@ fn event_publish_multiple_command() {
     let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
 
     Assert::main_binary()
-        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", event_bodys])
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", &format!("{}", event_bodys)])
         .succeeds()
         .execute()
         .unwrap();
@@ -94,18 +97,20 @@ fn event_publish_multiple_command() {
 #[test]
 fn event_stream_command() {
 
-    let response_body_factory = || "\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"no\", \"field-1\": 434234235}]}\n\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noo\", \"field-1\": 434234235}, {\"field-2\": \"nooo\", \"field-1\": 434234235}]}\n\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noooo\", \"field-1\": 434234235}]}\n\
-    ".to_string().into();
+    let response_body_factory = || {
+        format!("{}\n{}\n{}\n",
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "no", "field-1": 434234235}]}),
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "noo", "field-1": 434234235}, {"field-2": "nooo", "field-1": 434234235}]}),
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "noooo", "field-1": 434234235}]}),
+        ).into()
+    };
 
-    let expected_stdout = "\
-    {\"field-1\":434234235,\"field-2\":\"no\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"noo\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"nooo\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"noooo\"}\n\
-    ";
+    let expected_stdout = format!("{}\n{}\n{}\n{}\n",
+        json!({"field-1":434234235,"field-2":"no"}),
+        json!({"field-1":434234235,"field-2":"noo"}),
+        json!({"field-1":434234235,"field-2":"nooo"}),
+        json!({"field-1":434234235,"field-2":"noooo"}),
+    );
 
     let mocked_service = MockedService {
         body_factory: response_body_factory,
@@ -130,17 +135,19 @@ fn event_stream_command() {
 #[test]
 fn event_stream_n_command() {
 
-    let response_body_factory = || "\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"no\", \"field-1\": 434234235}]}\n\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noo\", \"field-1\": 434234235}, {\"field-2\": \"nooo\", \"field-1\": 434234235}]}\n\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noooo\", \"field-1\": 434234235}]}\n\
-    ".to_string().into();
+    let response_body_factory = || {
+        format!("{}\n{}\n{}\n",
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "no", "field-1": 434234235}]}),
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "noo", "field-1": 434234235}, {"field-2": "nooo", "field-1": 434234235}]}),
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "noooo", "field-1": 434234235}]}),
+        ).into()
+    };
 
-    let expected_stdout = "\
-    {\"field-1\":434234235,\"field-2\":\"no\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"noo\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"nooo\"}\n\
-    ";
+    let expected_stdout = format!("{}\n{}\n{}\n",
+        json!({"field-1":434234235,"field-2":"no"}),
+        json!({"field-1":434234235,"field-2":"noo"}),
+        json!({"field-1":434234235,"field-2":"nooo"}),
+    );
 
     let mocked_service = MockedService {
         body_factory: response_body_factory,
@@ -161,19 +168,142 @@ fn event_stream_n_command() {
     shutdown.send(()).unwrap();
 }
 
-#[derive(Clone)]
+#[test]
+fn eventtype_create_command() {
+
+    let eventtype_schema = json!({"type":"object","properties":{"partner_id":{"type":"number"},"quantity":{"type":"number"},"app_domain":{"type":"string"},"article_id":{"type":"string"}}});
+    let eventtype_name = "NEW_EVENT_TYPE";
+    let owning_application = "testapp";
+    let category = "undefined";
+
+    let expected_request_body = ExpectedRequestBody::JsonValue(json!({
+        "name": eventtype_name,
+        "schema": {
+            "type": "json_schema",
+            "schema": serde_json::to_string(&eventtype_schema).expect("Failed to encode JSON Schema of event type into String"),
+        },
+        "owning_application": owning_application,
+        "category": category,
+        }));
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types".to_string(),
+        expected_request_body,
+        expected_method: Method::Post,
+        status_code: StatusCode::Created,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", owning_application, eventtype_name, &format!("{}", eventtype_schema)])
+        .succeeds()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn eventtype_list_command() {
+
+    let list_response = json!([
+        {
+            "name": "event1",
+            "owning_application": "app1",
+            "category": "business",
+            "enrichment_strategies": [ "metadata_enrichment" ],
+            "partition_strategy": "hash",
+            "partition_key_fields": [ "field1" ],
+            "default_statistic": { "messages_per_minute": 100, "message_size": 100, "read_parallelism": 8, "write_parallelism": 8 },
+            "options": { "retention_time": 345600000 },
+            "authorization": null,
+            "compatibility_mode": "forward",
+            "updated_at": "2017-06-19T13:11:24.943Z",
+            "created_at": "2017-06-19T13:11:24.943Z"
+        },
+        {
+            "name": "event2",
+            "owning_application": "app2",
+            "category": "business",
+            "enrichment_strategies": [ "metadata_enrichment" ],
+            "partition_strategy": "random",
+            "partition_key_fields": [],
+            "schema": { "type": "json_schema", "schema": "{ \"properties\": { \"json\": { \"type\": \"string\" } }}", "version": "1.0.0", "created_at": "2017-10-16T09:47:42.408Z" },
+            "default_statistic": null,
+            "options": { "retention_time": 345600000 },
+            "authorization": null,
+            "compatibility_mode": "forward",
+            "updated_at": "2017-10-16T09:47:42.408Z",
+            "created_at": "2017-10-16T09:47:42.408Z"
+        }]);
+
+    let bf = || {
+        format!("{}", json!([
+        {
+            "name": "event1",
+            "owning_application": "app1",
+            "category": "business",
+            "enrichment_strategies": [ "metadata_enrichment" ],
+            "partition_strategy": "hash",
+            "partition_key_fields": [ "field1" ],
+            "default_statistic": { "messages_per_minute": 100, "message_size": 100, "read_parallelism": 8, "write_parallelism": 8 },
+            "options": { "retention_time": 345600000 },
+            "authorization": null,
+            "compatibility_mode": "forward",
+            "updated_at": "2017-06-19T13:11:24.943Z",
+            "created_at": "2017-06-19T13:11:24.943Z"
+        },
+        {
+            "name": "event2",
+            "owning_application": "app2",
+            "category": "business",
+            "enrichment_strategies": [ "metadata_enrichment" ],
+            "partition_strategy": "random",
+            "partition_key_fields": [],
+            "schema": { "type": "json_schema", "schema": "{ \"properties\": { \"json\": { \"type\": \"string\" } }}", "version": "1.0.0", "created_at": "2017-10-16T09:47:42.408Z" },
+            "default_statistic": null,
+            "options": { "retention_time": 345600000 },
+            "authorization": null,
+            "compatibility_mode": "forward",
+            "updated_at": "2017-10-16T09:47:42.408Z",
+            "created_at": "2017-10-16T09:47:42.408Z"
+        }])).into()
+    };
+
+    let mocked_service = MockedService {
+        body_factory: bf,
+        expected_path: "/event-types".to_string(),
+        expected_request_body: ExpectedRequestBody::None,
+        expected_method: Method::Get,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "list"])
+        .stdout().is(format!("{}", list_response))
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[derive(Clone, Debug)]
 struct MockedService {
-    body_factory: fn() -> Body,
+    body_factory: fn() -> Body, // Not a closure because needs to be cloneable. Maybe after https://git.io/vF747 this can be done
     expected_path: String,
     expected_request_body: ExpectedRequestBody,
     expected_method: Method,
     status_code: StatusCode,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum ExpectedRequestBody {
     JsonValue(Value),
-    Text(String),
+//    Text(String),
     None
 }
 
@@ -196,13 +326,16 @@ impl Service for MockedService {
 
                 match mocked_service.expected_request_body {
                     ExpectedRequestBody::JsonValue(ref expected_request_json_value) if Some(expected_request_json_value) == serde_json::from_str(&request_body).ok().as_ref() => good_response,
-                    ExpectedRequestBody::Text(ref expected_request_text) if expected_request_text == &request_body => good_response,
+//                    ExpectedRequestBody::Text(ref expected_request_text) if expected_request_text == &request_body => good_response,
                     ExpectedRequestBody::None => good_response,
-                    _ => Response::new().with_status(StatusCode::NotFound)
+                    _ => {
+                        eprintln!("Unexpected request body: {} vs {:?}", &request_body, mocked_service.expected_request_body);
+                        Response::new().with_status(StatusCode::BadRequest)
+                    }
                 }
             }))
         } else {
-            println!("Unexpected request: {} {}", &mocked_service.expected_method, &mocked_service.expected_path);
+            eprintln!("Unexpected request: {} {}", &mocked_service.expected_method, &mocked_service.expected_path);
             Box::new(future::ok(Response::new().with_status(StatusCode::NotFound)))
         }
     }

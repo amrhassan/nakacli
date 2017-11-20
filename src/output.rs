@@ -7,35 +7,40 @@ use std::fmt::{Display, Formatter};
 use std::process::exit;
 use std::fmt;
 
-pub fn die(exit_code: i32, failure: Failure) -> ! {
+/// Exits the application with failure
+pub fn die_failure(failure: Failure) -> ! {
     eprintln!("{}", failure);
-    exit(exit_code)
+    exit(1)
 }
 
-pub fn die_successfully() -> ! {
+/// Exits the application with success
+pub fn die_success() -> ! {
     exit(0)
 }
 
+/// Prints operation result from the Nakadi server, then exits either with success or failure based on the `expected_status_code`.
 pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_status_code: StatusCode, pretty: bool) {
     match result {
         Ok((status_code, ref output)) if status_code == expected_status_code => {
             if !output.is_empty() {
                 print_json(&output, pretty);
             }
+            die_success()
         },
-        Ok((_, output)) => {
+        Ok((status_code, output)) => {
             if pretty {
-                die(1, failureln("Unexpected response:", pretty_json(&output)));
+                die_failure(failureln(&format!("Unexpected response ({})", status_code), if output.is_empty() { "[No Response Body]".to_owned() } else { pretty_json(&output) }));
             } else {
-                die(1, failure("Unexpected response:", &output));
+                die_failure(failure(&format!("Unexpected response ({})", status_code), if output.is_empty() { "[No Response Body]".to_owned() } else { output }));
             }
         }
         Err(err) => {
-            die(1, err);
+            die_failure(err);
         }
     }
 }
 
+/// Prints a JSON value encoded as a String
 pub fn print_json(result: &str, pretty: bool) {
     if pretty {
         println!("{}", pretty_json(result))
@@ -44,6 +49,7 @@ pub fn print_json(result: &str, pretty: bool) {
     }
 }
 
+/// Prints a JSON value
 pub fn print_json_value(value: &Value, pretty: bool) {
     if pretty {
         println!("{}", to_string_pretty(value).expect("Failed to serialize a JSON value"))
@@ -54,7 +60,7 @@ pub fn print_json_value(value: &Value, pretty: bool) {
 
 /// Canonical representation of error message
 pub fn failure<A: Display>(header: &str, detailed: A) -> Failure {
-    Failure { show: format!("{}, {}", Colour::Red.paint(header), detailed) }
+    Failure { show: format!("{}: {}", Colour::Red.paint(header), detailed) }
 }
 
 pub struct Failure { show: String }
@@ -65,8 +71,9 @@ impl Display for Failure {
     }
 }
 
+/// Constructs a `Failure` that spans two lines
 fn failureln<A: Display>(header: &str, detailed: A) -> Failure {
-    Failure { show: format!("{}\n{}", Colour::Red.paint(header), detailed) }
+    Failure { show: format!("{}:\n{}", Colour::Red.paint(header), detailed) }
 }
 
 fn pretty_json(json: &str) -> String {

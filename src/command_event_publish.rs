@@ -42,14 +42,13 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
     let path = format!("/event-types/{}/events", params.event_type);
     let body = {
         let decoded = serde_json::from_str::<serde_json::Value>(params.json_body).expect("Failed to JSON-decode text that was validated to be JSON by clap");
-        let json_array = if decoded.is_object() {
+        if decoded.is_object() {
             serde_json::Value::Array(vec![decoded])
         } else if decoded.is_array() {
             decoded
         } else {
             panic!("Input json_body should have been validated to be JSON object or array by clap")
-        };
-        serde_json::to_string(&json_array).expect("Failed to encode into JSON for some reason!")
+        }
     };
 
     let action = http::execute_and_read_full_resp_body_utf8(
