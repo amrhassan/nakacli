@@ -16,8 +16,8 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
 pub fn run(application: &mut Application, global_params: &GlobalParams, matches: &ArgMatches) {
     if let Some(matches) = matches.subcommand_matches(command_eventtype_create::NAME) {
         command_eventtype_create::run(application, global_params, matches)
-    } else if let Some(matches) = matches.subcommand_matches(command_eventtype_list::NAME) {
-        command_eventtype_list::run(application, global_params, matches)
+    } else if let Some(_matches) = matches.subcommand_matches(command_eventtype_list::NAME) {
+//        command_eventtype_list::run(application, global_params, matches)
     } else {
         panic!("No command matched! Should have been caught by clap")
     }

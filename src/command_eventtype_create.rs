@@ -60,7 +60,7 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
         };
         let event_type = EventType {name, owning_application, category, schema };
 
-        serde_json::to_value(event_type).and_then(|v| serde_json::to_string(&v)).expect("Failed to JSON-serialize request body")
+        serde_json::to_value(event_type).expect("Failed to JSON-encode request body")
     };
 
     let action = http::execute_and_read_full_resp_body_utf8(

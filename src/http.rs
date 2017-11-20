@@ -12,10 +12,12 @@ use hyper::client::{HttpConnector};
 use hyper_tls::HttpsConnector;
 use hyper::{Response, Client, StatusCode};
 use server::ServerInfo;
+use serde_json::{Value};
+use serde_json;
 
 pub type HttpClient = Client<HttpsConnector<HttpConnector>>;
 
-pub fn build_request(method: Method, path: &str, server_info: &ServerInfo, body: Option<&str>) -> Result<Request, Failure> {
+pub fn build_request(method: Method, path: &str, server_info: &ServerInfo, body: Option<&Value>) -> Result<Request, Failure> {
 
     let uri = format!("{}{}", server_info.url_base, path).parse().expect("Failed to construct URI for HTTP request");
     let mut request = Request::new(method, uri);
@@ -31,7 +33,9 @@ pub fn build_request(method: Method, path: &str, server_info: &ServerInfo, body:
     }
 
     if let Some(body_value) = body {
-        request.set_body(body_value.to_owned());
+        let text_body = serde_json::to_string(body_value).map_err(|err| failure("Failed to JSON-serialize the request body", err))?;
+        request.headers_mut().set(header::ContentType::json());
+        request.set_body(text_body);
     }
 
     Ok(request)
@@ -55,7 +59,7 @@ pub fn execute_and_read_full_resp_body_utf8<'a>(
     method: Method,
     path: &'a str,
     server_info: &'a ServerInfo,
-    body: Option<&'a str>) -> impl Future<Item=(StatusCode, String), Error=Failure> + 'a {
+    body: Option<&Value>) -> impl Future<Item=(StatusCode, String), Error=Failure> + 'a {
     let request = build_request(method, path, server_info, body);
     future::result(request)
         .and_then(move |r| execute_request(http_client, r))
