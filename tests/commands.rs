@@ -175,6 +175,9 @@ fn eventtype_create_command() {
     let eventtype_name = "NEW_EVENT_TYPE";
     let owning_application = "testapp";
     let category = "undefined";
+    let partition_strategy = "random";
+    let partition_key_fields: Option<Vec<&str>> = None;
+    let compatibility_mode = "forward";
 
     let expected_request_body = ExpectedRequestBody::JsonValue(json!({
         "name": eventtype_name,
@@ -184,6 +187,9 @@ fn eventtype_create_command() {
         },
         "owning_application": owning_application,
         "category": category,
+        "partition_strategy": partition_strategy,
+        "compatibility_mode": compatibility_mode,
+        "partition_key_fields": partition_key_fields,
         }));
 
     let mocked_service = MockedService {
