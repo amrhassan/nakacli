@@ -21,7 +21,7 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
         .about("Creates a new event type")
         .arg(Arg::with_name(ARG_OWNING_APPLICATION).index(1).required(true).help("The owning application ID"))
         .arg(Arg::with_name(ARG_NAME).index(2).required(true).help("The name of the event type"))
-        .arg(Arg::with_name(ARG_JSON_SCHEMA).index(3).required(true).help("The JSON Schema of the event"))
+        .arg(Arg::with_name(ARG_JSON_SCHEMA).index(3).required(true).help("The JSON Schema of the event type"))
         .arg(Arg::with_name(ARG_CATEGORY).long("category").takes_value(true).required(false).possible_values(ARG_CATEGORY_VALUES))
 }
 

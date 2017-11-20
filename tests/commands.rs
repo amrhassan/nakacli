@@ -204,6 +204,93 @@ fn eventtype_create_command() {
     shutdown.send(()).unwrap();
 }
 
+#[test]
+fn eventtype_list_command() {
+
+    let list_response = json!([
+        {
+            "name": "event1",
+            "owning_application": "app1",
+            "category": "business",
+            "enrichment_strategies": [ "metadata_enrichment" ],
+            "partition_strategy": "hash",
+            "partition_key_fields": [ "field1" ],
+            "default_statistic": { "messages_per_minute": 100, "message_size": 100, "read_parallelism": 8, "write_parallelism": 8 },
+            "options": { "retention_time": 345600000 },
+            "authorization": null,
+            "compatibility_mode": "forward",
+            "updated_at": "2017-06-19T13:11:24.943Z",
+            "created_at": "2017-06-19T13:11:24.943Z"
+        },
+        {
+            "name": "event2",
+            "owning_application": "app2",
+            "category": "business",
+            "enrichment_strategies": [ "metadata_enrichment" ],
+            "partition_strategy": "random",
+            "partition_key_fields": [],
+            "schema": { "type": "json_schema", "schema": "{ \"properties\": { \"json\": { \"type\": \"string\" } }}", "version": "1.0.0", "created_at": "2017-10-16T09:47:42.408Z" },
+            "default_statistic": null,
+            "options": { "retention_time": 345600000 },
+            "authorization": null,
+            "compatibility_mode": "forward",
+            "updated_at": "2017-10-16T09:47:42.408Z",
+            "created_at": "2017-10-16T09:47:42.408Z"
+        }]);
+
+    let bf = || {
+        format!("{}", json!([
+        {
+            "name": "event1",
+            "owning_application": "app1",
+            "category": "business",
+            "enrichment_strategies": [ "metadata_enrichment" ],
+            "partition_strategy": "hash",
+            "partition_key_fields": [ "field1" ],
+            "default_statistic": { "messages_per_minute": 100, "message_size": 100, "read_parallelism": 8, "write_parallelism": 8 },
+            "options": { "retention_time": 345600000 },
+            "authorization": null,
+            "compatibility_mode": "forward",
+            "updated_at": "2017-06-19T13:11:24.943Z",
+            "created_at": "2017-06-19T13:11:24.943Z"
+        },
+        {
+            "name": "event2",
+            "owning_application": "app2",
+            "category": "business",
+            "enrichment_strategies": [ "metadata_enrichment" ],
+            "partition_strategy": "random",
+            "partition_key_fields": [],
+            "schema": { "type": "json_schema", "schema": "{ \"properties\": { \"json\": { \"type\": \"string\" } }}", "version": "1.0.0", "created_at": "2017-10-16T09:47:42.408Z" },
+            "default_statistic": null,
+            "options": { "retention_time": 345600000 },
+            "authorization": null,
+            "compatibility_mode": "forward",
+            "updated_at": "2017-10-16T09:47:42.408Z",
+            "created_at": "2017-10-16T09:47:42.408Z"
+        }])).into()
+    };
+
+    let mocked_service = MockedService {
+        body_factory: bf,
+        expected_path: "/event-types".to_string(),
+        expected_request_body: ExpectedRequestBody::None,
+        expected_method: Method::Get,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "list"])
+        .stdout().is(format!("{}", list_response))
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
 #[derive(Clone, Debug)]
 struct MockedService {
     body_factory: fn() -> Body, // Not a closure because needs to be cloneable. Maybe after https://git.io/vF747 this can be done
@@ -216,7 +303,7 @@ struct MockedService {
 #[derive(Clone, Debug)]
 enum ExpectedRequestBody {
     JsonValue(Value),
-    Text(String),
+//    Text(String),
     None
 }
 
@@ -239,7 +326,7 @@ impl Service for MockedService {
 
                 match mocked_service.expected_request_body {
                     ExpectedRequestBody::JsonValue(ref expected_request_json_value) if Some(expected_request_json_value) == serde_json::from_str(&request_body).ok().as_ref() => good_response,
-                    ExpectedRequestBody::Text(ref expected_request_text) if expected_request_text == &request_body => good_response,
+//                    ExpectedRequestBody::Text(ref expected_request_text) if expected_request_text == &request_body => good_response,
                     ExpectedRequestBody::None => good_response,
                     _ => {
                         eprintln!("Unexpected request body: {} vs {:?}", &request_body, mocked_service.expected_request_body);
