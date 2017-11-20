@@ -91,6 +91,7 @@ struct EventTypeSchema {
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "lowercase")]
 enum EventTypeCategory {
     Undefined,
     Data,

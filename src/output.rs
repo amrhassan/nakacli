@@ -27,11 +27,11 @@ pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_stat
             }
             die_success()
         },
-        Ok((_, output)) => {
+        Ok((status_code, output)) => {
             if pretty {
-                die_failure(failureln("Unexpected response:", pretty_json(&output)));
+                die_failure(failureln(&format!("Unexpected response ({})", status_code), if output.is_empty() { "[No Response Body]".to_owned() } else { pretty_json(&output) }));
             } else {
-                die_failure(failure("Unexpected response:", &output));
+                die_failure(failure(&format!("Unexpected response ({})", status_code), if output.is_empty() { "[No Response Body]".to_owned() } else { output }));
             }
         }
         Err(err) => {
@@ -60,7 +60,7 @@ pub fn print_json_value(value: &Value, pretty: bool) {
 
 /// Canonical representation of error message
 pub fn failure<A: Display>(header: &str, detailed: A) -> Failure {
-    Failure { show: format!("{}, {}", Colour::Red.paint(header), detailed) }
+    Failure { show: format!("{}: {}", Colour::Red.paint(header), detailed) }
 }
 
 pub struct Failure { show: String }
@@ -73,7 +73,7 @@ impl Display for Failure {
 
 /// Constructs a `Failure` that spans two lines
 fn failureln<A: Display>(header: &str, detailed: A) -> Failure {
-    Failure { show: format!("{}\n{}", Colour::Red.paint(header), detailed) }
+    Failure { show: format!("{}:\n{}", Colour::Red.paint(header), detailed) }
 }
 
 fn pretty_json(json: &str) -> String {

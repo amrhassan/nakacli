@@ -3,6 +3,8 @@
 extern crate assert_cli;
 extern crate hyper;
 extern crate futures;
+
+#[macro_use]
 extern crate serde_json;
 
 use hyper::server::{Http, Request, Response, Service};
@@ -161,7 +163,43 @@ fn event_stream_n_command() {
     shutdown.send(()).unwrap();
 }
 
-#[derive(Clone)]
+#[test]
+fn eventtype_create_command() {
+
+    let eventtype_schema = json!({"type":"object","properties":{"partner_id":{"type":"number"},"quantity":{"type":"number"},"app_domain":{"type":"string"},"article_id":{"type":"string"}}});
+    let eventtype_name = "NEW_EVENT_TYPE";
+    let owning_application = "testapp";
+    let category = "undefined";
+
+    let expected_request_body = ExpectedRequestBody::JsonValue(json!({
+        "name": eventtype_name,
+        "schema": {
+            "type": "json_schema",
+            "schema": serde_json::to_string(&eventtype_schema).expect("Failed to encode JSON Schema of event type into String"),
+        },
+        "owning_application": owning_application,
+        "category": category,
+        }));
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types".to_string(),
+        expected_request_body,
+        expected_method: Method::Post,
+        status_code: StatusCode::Created,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", owning_application, eventtype_name, &serde_json::to_string(&eventtype_schema).unwrap()])
+        .succeeds()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[derive(Clone, Debug)]
 struct MockedService {
     body_factory: fn() -> Body,
     expected_path: String,
@@ -170,7 +208,7 @@ struct MockedService {
     status_code: StatusCode,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum ExpectedRequestBody {
     JsonValue(Value),
     Text(String),
@@ -198,11 +236,14 @@ impl Service for MockedService {
                     ExpectedRequestBody::JsonValue(ref expected_request_json_value) if Some(expected_request_json_value) == serde_json::from_str(&request_body).ok().as_ref() => good_response,
                     ExpectedRequestBody::Text(ref expected_request_text) if expected_request_text == &request_body => good_response,
                     ExpectedRequestBody::None => good_response,
-                    _ => Response::new().with_status(StatusCode::NotFound)
+                    _ => {
+                        eprintln!("Unexpected request body: {} vs {:?}", &request_body, mocked_service.expected_request_body);
+                        Response::new().with_status(StatusCode::BadRequest)
+                    }
                 }
             }))
         } else {
-            println!("Unexpected request: {} {}", &mocked_service.expected_method, &mocked_service.expected_path);
+            eprintln!("Unexpected request: {} {}", &mocked_service.expected_method, &mocked_service.expected_path);
             Box::new(future::ok(Response::new().with_status(StatusCode::NotFound)))
         }
     }
