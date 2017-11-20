@@ -202,7 +202,7 @@ fn eventtype_create_command() {
 
 #[derive(Clone, Debug)]
 struct MockedService {
-    body_factory: fn() -> Body,
+    body_factory: fn() -> Body, // Not a closure because needs to be cloneable. Maybe after https://git.io/vF747 this can be done
     expected_path: String,
     expected_request_body: ExpectedRequestBody,
     expected_method: Method,
