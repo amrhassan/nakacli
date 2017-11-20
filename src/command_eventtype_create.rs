@@ -7,13 +7,18 @@ use output;
 use server::ServerInfo;
 use http;
 
-pub const NAME:                 &'static str = "create";
+pub const NAME:                         &'static str = "create";
 
-const ARG_NAME:                 &'static str = "name";
-const ARG_OWNING_APPLICATION:   &'static str = "owning-application";
-const ARG_CATEGORY:             &'static str = "category";
-const ARG_CATEGORY_VALUES       : &'static [&'static str] = &["business", "data", "undefined"];
-const ARG_JSON_SCHEMA:          &'static str = "json-schema";
+const ARG_NAME:                         &'static str = "name";
+const ARG_OWNING_APPLICATION:           &'static str = "owning-application";
+const ARG_CATEGORY:                     &'static str = "category";
+const ARG_CATEGORY_VALUES:              &'static [&str] = &["undefined", "business", "data"];
+const ARG_JSON_SCHEMA:                  &'static str = "json-schema";
+const ARG_PARTITION_STRATEGY:           &'static str = "partition-strategy";
+const ARG_PARTITION_STRATEGY_VALUES:    &'static [&str] = &["random", "hash"];
+const ARG_COMPATIBILITY_MODE:           &'static str = "compatibility-mode";
+const ARG_COMPATIBILITY_MODE_VALUES:    &[&str] = &["forward", "compatible", "none"];
+const ARG_PARTITION_KEY_FIELDS:         &'static str = "partition-key-fields";
 
 
 pub fn sub_command<'a>() -> App<'a, 'a> {
@@ -22,22 +27,54 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
         .arg(Arg::with_name(ARG_OWNING_APPLICATION).index(1).required(true).help("The owning application ID"))
         .arg(Arg::with_name(ARG_NAME).index(2).required(true).help("The name of the event type"))
         .arg(Arg::with_name(ARG_JSON_SCHEMA).index(3).required(true).help("The JSON Schema of the event type"))
-        .arg(Arg::with_name(ARG_CATEGORY).long("category").takes_value(true).required(false).possible_values(ARG_CATEGORY_VALUES))
+        .arg(Arg::with_name(ARG_CATEGORY)
+            .long("category")
+            .takes_value(true)
+            .required(false)
+            .possible_values(ARG_CATEGORY_VALUES)
+            .default_value(ARG_CATEGORY_VALUES[0])
+        )
+        .arg(Arg::with_name(ARG_PARTITION_STRATEGY)
+            .long("partition-strategy")
+            .takes_value(true)
+            .required(false)
+            .possible_values(ARG_PARTITION_STRATEGY_VALUES)
+            .default_value(ARG_PARTITION_STRATEGY_VALUES[0])
+        )
+        .arg(Arg::with_name(ARG_COMPATIBILITY_MODE)
+            .long("compatibility-mode")
+            .takes_value(true)
+            .required(false)
+            .possible_values(ARG_COMPATIBILITY_MODE_VALUES)
+            .default_value(ARG_COMPATIBILITY_MODE_VALUES[0])
+        )
+        .arg(Arg::with_name(ARG_PARTITION_KEY_FIELDS)
+            .multiple(true)
+            .long("partition-key-field")
+            .takes_value(true)
+            .required_if(ARG_PARTITION_STRATEGY, "hash")
+        )
 }
 
 struct Params<'a> {
     name: &'a str,
     owning_application: &'a str,
-    category: Option<&'a str>,
+    category: &'a str,
     json_schema: &'a str,
+    compatibility_mode: &'a str,
+    partition_strategy: &'a str,
+    partition_key_fields: Option<Vec<&'a str>>,
 }
 
 fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
     Params {
         name: matches.value_of(ARG_NAME).expect("Non-optional argument should have been caught by clap if missing"),
         owning_application: matches.value_of(ARG_OWNING_APPLICATION).expect("Non-optional argument should have been caught by clap if missing"),
-        category: matches.value_of(ARG_CATEGORY),
+        category: matches.value_of(ARG_CATEGORY).expect("Non-optional argument should have been caught by clap if missing"),
         json_schema: matches.value_of(ARG_JSON_SCHEMA).expect("Non-optional argument should have been caught by clap if missing"),
+        compatibility_mode: matches.value_of(ARG_COMPATIBILITY_MODE).expect("Non-optional argument should have been caught by clap if missing"),
+        partition_strategy: matches.value_of(ARG_PARTITION_STRATEGY).expect("Non-optional argument should have been caught by clap if missing"),
+        partition_key_fields: matches.values_of(ARG_PARTITION_KEY_FIELDS).map(|values| values.collect()),
     }
 }
 
@@ -50,7 +87,10 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
     let request_body = json!({
         "name": params.name.to_string(),
         "owning_application": params.owning_application.to_string(),
-        "category": params.category.unwrap_or("undefined").to_string(),
+        "category": params.category.to_string(),
+        "partition_strategy": params.partition_strategy,
+        "compatibility_mode": params.compatibility_mode,
+        "partition_key_fields": params.partition_key_fields,
         "schema": {
             "type": "json_schema",
             "schema": params.json_schema.to_string()
