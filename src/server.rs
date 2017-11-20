@@ -6,6 +6,7 @@ pub struct ServerInfo<'a> {
     pub authorization: Authorization<'a>
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum Authorization<'a> {
     None,
     BearerToken(&'a str),

@@ -7,6 +7,8 @@ extern crate hyper_tls;
 extern crate ansi_term;
 extern crate clap;
 extern crate serde;
+
+#[macro_use]
 extern crate serde_json;
 
 #[macro_use]
