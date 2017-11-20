@@ -49,12 +49,12 @@ fn metrics_command() {
 #[test]
 fn event_publish_command() {
 
-    let event_body = "{\"field-2\": \"noooo\", \"field-1\": 434234235}";
+    let event_body = json!({"field-2": "noooo", "field-1": 434234235});
 
     let mocked_service = MockedService {
         body_factory: || Body::empty(),
         expected_path: "/event-types/event-type-x/events".to_string(),
-        expected_request_body: ExpectedRequestBody::JsonValue(serde_json::from_str("[{\"field-2\": \"noooo\", \"field-1\": 434234235}]").expect("BAD JSON")),
+        expected_request_body: ExpectedRequestBody::JsonValue(json!([{"field-2": "noooo", "field-1": 434234235}])),
         expected_method: Method::Post,
         status_code: StatusCode::Ok,
     };
@@ -62,7 +62,7 @@ fn event_publish_command() {
     let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
 
     Assert::main_binary()
-        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", event_body])
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", &format!("{}",event_body)])
         .succeeds()
         .execute()
         .unwrap();
