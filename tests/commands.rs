@@ -73,12 +73,12 @@ fn event_publish_command() {
 #[test]
 fn event_publish_multiple_command() {
 
-    let event_bodys = "[{\"field-2\": \"noooo\", \"field-1\": 434234235}, {\"field-2\": \"yes\", \"field-1\": 6}]";
+    let event_bodys = json!([{"field-2": "noooo", "field-1": 434234235}, {"field-2": "yes", "field-1": 6}]);
 
     let mocked_service = MockedService {
         body_factory: || Body::empty(),
         expected_path: "/event-types/event-type-x/events".to_string(),
-        expected_request_body: ExpectedRequestBody::JsonValue(serde_json::from_str("[{\"field-2\": \"noooo\", \"field-1\": 434234235}, {\"field-2\": \"yes\", \"field-1\": 6}]").expect("BAD JSON")),
+        expected_request_body: ExpectedRequestBody::JsonValue(event_bodys.clone()),
         expected_method: Method::Post,
         status_code: StatusCode::Ok,
     };
@@ -86,7 +86,7 @@ fn event_publish_multiple_command() {
     let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
 
     Assert::main_binary()
-        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", event_bodys])
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", &format!("{}", event_bodys)])
         .succeeds()
         .execute()
         .unwrap();
@@ -97,18 +97,20 @@ fn event_publish_multiple_command() {
 #[test]
 fn event_stream_command() {
 
-    let response_body_factory = || "\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"no\", \"field-1\": 434234235}]}\n\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noo\", \"field-1\": 434234235}, {\"field-2\": \"nooo\", \"field-1\": 434234235}]}\n\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noooo\", \"field-1\": 434234235}]}\n\
-    ".to_string().into();
+    let response_body_factory = || {
+        format!("{}\n{}\n{}\n",
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "no", "field-1": 434234235}]}),
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "noo", "field-1": 434234235}, {"field-2": "nooo", "field-1": 434234235}]}),
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "noooo", "field-1": 434234235}]}),
+        ).into()
+    };
 
-    let expected_stdout = "\
-    {\"field-1\":434234235,\"field-2\":\"no\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"noo\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"nooo\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"noooo\"}\n\
-    ";
+    let expected_stdout = format!("{}\n{}\n{}\n{}\n",
+        json!({"field-1":434234235,"field-2":"no"}),
+        json!({"field-1":434234235,"field-2":"noo"}),
+        json!({"field-1":434234235,"field-2":"nooo"}),
+        json!({"field-1":434234235,"field-2":"noooo"}),
+    );
 
     let mocked_service = MockedService {
         body_factory: response_body_factory,
@@ -133,17 +135,19 @@ fn event_stream_command() {
 #[test]
 fn event_stream_n_command() {
 
-    let response_body_factory = || "\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"no\", \"field-1\": 434234235}]}\n\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noo\", \"field-1\": 434234235}, {\"field-2\": \"nooo\", \"field-1\": 434234235}]}\n\
-    {\"cursor\":{\"partition\":\"0\",\"offset\":\"6\"},\"events\":[{\"field-2\": \"noooo\", \"field-1\": 434234235}]}\n\
-    ".to_string().into();
+    let response_body_factory = || {
+        format!("{}\n{}\n{}\n",
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "no", "field-1": 434234235}]}),
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "noo", "field-1": 434234235}, {"field-2": "nooo", "field-1": 434234235}]}),
+                json!({"cursor":{"partition":"0","offset":"6"},"events":[{"field-2": "noooo", "field-1": 434234235}]}),
+        ).into()
+    };
 
-    let expected_stdout = "\
-    {\"field-1\":434234235,\"field-2\":\"no\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"noo\"}\n\
-    {\"field-1\":434234235,\"field-2\":\"nooo\"}\n\
-    ";
+    let expected_stdout = format!("{}\n{}\n{}\n",
+        json!({"field-1":434234235,"field-2":"no"}),
+        json!({"field-1":434234235,"field-2":"noo"}),
+        json!({"field-1":434234235,"field-2":"nooo"}),
+    );
 
     let mocked_service = MockedService {
         body_factory: response_body_factory,
@@ -193,7 +197,7 @@ fn eventtype_create_command() {
     let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
 
     Assert::main_binary()
-        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", owning_application, eventtype_name, &serde_json::to_string(&eventtype_schema).unwrap()])
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", owning_application, eventtype_name, &format!("{}", eventtype_schema)])
         .succeeds()
         .unwrap();
 
