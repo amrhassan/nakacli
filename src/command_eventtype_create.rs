@@ -6,6 +6,7 @@ use hyper::{Method, StatusCode};
 use output;
 use server::ServerInfo;
 use http;
+use input::long_argument;
 
 pub const NAME:                         &'static str = "create";
 
@@ -26,7 +27,11 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
         .about("Creates a new event type")
         .arg(Arg::with_name(ARG_OWNING_APPLICATION).index(1).required(true).help("The owning application ID"))
         .arg(Arg::with_name(ARG_NAME).index(2).required(true).help("The name of the event type"))
-        .arg(Arg::with_name(ARG_JSON_SCHEMA).index(3).required(true).help("The JSON Schema of the event type"))
+        .arg(Arg::with_name(ARG_JSON_SCHEMA)
+            .index(3)
+            .required(true)
+            .validator(validate_json_schema)
+            .help("The JSON Schema of the event type (Use '@' prefix to specify a filepath. e.g. '@schema.json')"))
         .arg(Arg::with_name(ARG_CATEGORY)
             .long("category")
             .takes_value(true)
@@ -60,7 +65,7 @@ struct Params<'a> {
     name: &'a str,
     owning_application: &'a str,
     category: &'a str,
-    json_schema: &'a str,
+    json_schema: String,
     compatibility_mode: &'a str,
     partition_strategy: &'a str,
     partition_key_fields: Option<Vec<&'a str>>,
@@ -71,7 +76,7 @@ fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
         name: matches.value_of(ARG_NAME).expect("Non-optional argument should have been caught by clap if missing"),
         owning_application: matches.value_of(ARG_OWNING_APPLICATION).expect("Non-optional argument should have been caught by clap if missing"),
         category: matches.value_of(ARG_CATEGORY).expect("Non-optional argument should have been caught by clap if missing"),
-        json_schema: matches.value_of(ARG_JSON_SCHEMA).expect("Non-optional argument should have been caught by clap if missing"),
+        json_schema: matches.value_of(ARG_JSON_SCHEMA).and_then(|v| long_argument(v).ok()).expect("Non-optional argument should have been caught by clap if missing"),
         compatibility_mode: matches.value_of(ARG_COMPATIBILITY_MODE).expect("Non-optional argument should have been caught by clap if missing"),
         partition_strategy: matches.value_of(ARG_PARTITION_STRATEGY).expect("Non-optional argument should have been caught by clap if missing"),
         partition_key_fields: matches.values_of(ARG_PARTITION_KEY_FIELDS).map(|values| values.collect()),
@@ -107,4 +112,8 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
 
     let result = application.core.run(action);
     output::final_result(result, StatusCode::Created, global_params.pretty)
+}
+
+pub fn validate_json_schema(value: String) -> Result<(), String> {
+    long_argument(&value).map(|_| ())
 }
