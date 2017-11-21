@@ -7,7 +7,7 @@ use output;
 use global::*;
 use clap::*;
 
-pub const NAME: &'static str = "metrics";
+pub const NAME: &str = "metrics";
 
 pub  fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME).about("Gets monitoring metrics")

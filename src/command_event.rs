@@ -5,7 +5,7 @@ use command_event_stream;
 use app::Application;
 use global::GlobalParams;
 
-pub const NAME: &'static str = "event";
+pub const NAME: &str = "event";
 
 pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME).about("Events of a certain type")

@@ -28,6 +28,7 @@ mod command_eventtype_delete;
 mod auth;
 mod output;
 mod global;
+mod input;
 
 use clap::{App, AppSettings};
 use app::Application;

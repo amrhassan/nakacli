@@ -7,10 +7,11 @@ use hyper::{Method, StatusCode};
 use output;
 use global::*;
 use clap::{ArgMatches, App, SubCommand, Arg};
+use input::long_argument;
 
-pub const NAME: &'static str = "publish";
-const ARG_EVENT_TYPE: &'static str = "event-type";
-const ARG_JSON_BODY: &'static str = "json-body";
+pub const NAME: &str = "publish";
+const ARG_EVENT_TYPE: &str = "event-type";
+const ARG_JSON_BODY: &str = "json-body";
 
 pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME)
@@ -19,20 +20,20 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
         .arg(Arg::with_name(ARG_JSON_BODY)
             .required(true)
             .index(2)
-            .help("Body of one or more events in JSON format")
+            .help("Body of one or more events in JSON format (Use '@' prefix to specify a filepath. e.g. '@event.json')")
             .validator(validate_json_body)
         )
 }
 
 struct Params<'a> {
     event_type: &'a str,
-    json_body: &'a str
+    json_body: String,
 }
 
 fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
     Params {
         event_type: matches.value_of(ARG_EVENT_TYPE).expect("Non-optional argument should have been caught by clap if missing"),
-        json_body: matches.value_of(ARG_JSON_BODY).expect("Non-optional argument should have been caught by clap if missing")
+        json_body: matches.value_of(ARG_JSON_BODY).and_then(|v| long_argument(v).ok()).expect("Non-optional argument should have been caught by clap if missing")
     }
 }
 
@@ -41,7 +42,7 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
     let server_info = ServerInfo::from_params(global_params);
     let path = format!("/event-types/{}/events", params.event_type);
     let body = {
-        let decoded = serde_json::from_str::<serde_json::Value>(params.json_body).expect("Failed to JSON-decode text that was validated to be JSON by clap");
+        let decoded = serde_json::from_str::<serde_json::Value>(&params.json_body).expect("Failed to JSON-decode text that was validated to be JSON by clap");
         if decoded.is_object() {
             serde_json::Value::Array(vec![decoded])
         } else if decoded.is_array() {
@@ -63,7 +64,7 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
 }
 
 fn validate_json_body(value: String) -> Result<(), String> {
-    match serde_json::from_str::<serde_json::Value>(&value) {
+    match serde_json::from_str::<serde_json::Value>(&long_argument(&value)?) {
         Err(err) => Err(format!("JSON body of event is malformed: {}", err)),
         Ok(json_value) =>
             if let Some(array) = json_value.as_array() {

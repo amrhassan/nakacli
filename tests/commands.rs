@@ -3,6 +3,7 @@
 extern crate assert_cli;
 extern crate hyper;
 extern crate futures;
+extern crate tempdir;
 
 #[macro_use]
 extern crate serde_json;
@@ -18,8 +19,11 @@ use futures::sync::oneshot::{channel, Sender};
 use serde_json::Value;
 use hyper::Body;
 use std::net::SocketAddr;
+use std::fs::File;
+use std::io::prelude::*;
+use tempdir::TempDir;
 
-const HOST: &'static str = "127.0.0.1:8060";
+const HOST: &str = "127.0.0.1:8060";
 
 #[test]
 fn metrics_command() {
@@ -54,7 +58,7 @@ fn event_publish_command() {
     let mocked_service = MockedService {
         body_factory: || Body::empty(),
         expected_path: "/event-types/event-type-x/events".to_string(),
-        expected_request_body: ExpectedRequestBody::JsonValue(json!([{"field-2": "noooo", "field-1": 434234235}])),
+        expected_request_body: ExpectedRequestBody::JsonValue(json!([event_body])),
         expected_method: Method::Post,
         status_code: StatusCode::Ok,
     };
@@ -63,6 +67,36 @@ fn event_publish_command() {
 
     Assert::main_binary()
         .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", &format!("{}",event_body)])
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn event_publish_command_from_file() {
+
+    let event_body = json!({"field-2": "noooo", "field-1": 434234235});
+
+    let dir = TempDir::new("nakacli-test").unwrap();
+    let path = &format!("{}/event-body", dir.path().to_str().unwrap());
+
+    let mut file = File::create(path).unwrap();
+    file.write_all(format!("{}", event_body).as_bytes()).unwrap();
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types/event-type-x/events".to_string(),
+        expected_request_body: ExpectedRequestBody::JsonValue(json!([event_body])),
+        expected_method: Method::Post,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "event-type-x", &format!("@{}", path)])
         .succeeds()
         .execute()
         .unwrap();
@@ -183,7 +217,7 @@ fn eventtype_create_command() {
         "name": eventtype_name,
         "schema": {
             "type": "json_schema",
-            "schema": serde_json::to_string(&eventtype_schema).expect("Failed to encode JSON Schema of event type into String"),
+            "schema": format!("{}", eventtype_schema),
         },
         "owning_application": owning_application,
         "category": category,
@@ -204,6 +238,55 @@ fn eventtype_create_command() {
 
     Assert::main_binary()
         .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", owning_application, eventtype_name, &format!("{}", eventtype_schema)])
+        .succeeds()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn eventtype_create_command_from_file() {
+
+    let eventtype_schema = json!({"type":"object","properties":{"partner_id":{"type":"number"},"quantity":{"type":"number"},"app_domain":{"type":"string"},"article_id":{"type":"string"}}});
+
+    let dir = TempDir::new("nakacli-test").unwrap();
+    let path = &format!("{}/json-schema", dir.path().to_str().unwrap());
+
+    let mut file = File::create(path).unwrap();
+    file.write_all(format!("{}", eventtype_schema).as_bytes()).unwrap();
+
+    let eventtype_name = "NEW_EVENT_TYPE";
+    let owning_application = "testapp";
+    let category = "undefined";
+    let partition_strategy = "random";
+    let partition_key_fields: Option<Vec<&str>> = None;
+    let compatibility_mode = "forward";
+
+    let expected_request_body = ExpectedRequestBody::JsonValue(json!({
+        "name": eventtype_name,
+        "schema": {
+            "type": "json_schema",
+            "schema": format!("{}", eventtype_schema),
+        },
+        "owning_application": owning_application,
+        "category": category,
+        "partition_strategy": partition_strategy,
+        "compatibility_mode": compatibility_mode,
+        "partition_key_fields": partition_key_fields,
+        }));
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types".to_string(),
+        expected_request_body,
+        expected_method: Method::Post,
+        status_code: StatusCode::Created,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", owning_application, eventtype_name, &format!("@{}", path)])
         .succeeds()
         .unwrap();
 
