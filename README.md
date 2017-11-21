@@ -36,11 +36,15 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 #### `nakacli event publish [FLAGS] [OPTIONS] <event-type> <json-body>` ####
 Publishes one or more events of the type `<event-type>`. The `<json-body>` can be the full body of a single event as a JSON object, or a JSON array containing an object for each event to be published.
 
+You can specify a file path to read the event body from by passing `@FILEPATH` as the `<json-body>` value.
+
 #### `nakacli event stream [FLAGS] [OPTIONS] <event-type>` ####
 Starts streaming published events of type `<event-type>` to STDOUT. It should block while it's streaming published events until it is interrupted by the user, or it has consumed `N` number of events where `N` is provide by the `--take=N` option.
 
 #### `nakacli event-type create [FLAGS] [OPTIONS] <owning-application> <name> <json-schema>` ####
 Creates an event type with the given parameters. Optionally accepts a `--partition-strategy=hash` param, with which you'll have to specify one or more `--partition-key-field` to indicate the fields to be used in computing the partitioning hash. Compatibility mode for created event type can be specified using the `--compatibility-mode` option.
+
+You can specify a file path to read the JSON Schema from by passing `@FILEPATH` as the `<json-schema>` value.
 
 #### `nakacli event-type delete [FLAGS] [OPTIONS] <name>` ####
 Deletes the event-type with the specified `<name>`.
