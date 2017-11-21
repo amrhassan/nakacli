@@ -7,8 +7,8 @@ use output;
 use server::ServerInfo;
 use http;
 
-pub const NAME:                         &'static str = "delete";
-const ARG_NAME:                         &'static str = "name";
+pub const NAME:                         &str = "delete";
+const ARG_NAME:                         &str = "name";
 
 pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME)

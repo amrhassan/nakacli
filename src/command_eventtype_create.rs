@@ -8,18 +8,18 @@ use server::ServerInfo;
 use http;
 use input::long_argument;
 
-pub const NAME:                         &'static str = "create";
+pub const NAME:                         &str = "create";
 
-const ARG_NAME:                         &'static str = "name";
-const ARG_OWNING_APPLICATION:           &'static str = "owning-application";
-const ARG_CATEGORY:                     &'static str = "category";
+const ARG_NAME:                         &str = "name";
+const ARG_OWNING_APPLICATION:           &str = "owning-application";
+const ARG_CATEGORY:                     &str = "category";
 const ARG_CATEGORY_VALUES:              &'static [&str] = &["undefined", "business", "data"];
-const ARG_JSON_SCHEMA:                  &'static str = "json-schema";
-const ARG_PARTITION_STRATEGY:           &'static str = "partition-strategy";
+const ARG_JSON_SCHEMA:                  &str = "json-schema";
+const ARG_PARTITION_STRATEGY:           &str = "partition-strategy";
 const ARG_PARTITION_STRATEGY_VALUES:    &'static [&str] = &["random", "hash"];
-const ARG_COMPATIBILITY_MODE:           &'static str = "compatibility-mode";
+const ARG_COMPATIBILITY_MODE:           &str = "compatibility-mode";
 const ARG_COMPATIBILITY_MODE_VALUES:    &[&str] = &["forward", "compatible", "none"];
-const ARG_PARTITION_KEY_FIELDS:         &'static str = "partition-key-fields";
+const ARG_PARTITION_KEY_FIELDS:         &str = "partition-key-fields";
 
 
 pub fn sub_command<'a>() -> App<'a, 'a> {

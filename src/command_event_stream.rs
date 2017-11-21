@@ -11,9 +11,9 @@ use global::*;
 use clap::{ArgMatches, App, SubCommand, Arg};
 use futures::stream;
 
-pub const NAME: &'static str = "stream";
-const ARG_EVENT_TYPE: &'static str = "event-type";
-const ARG_TAKE: &'static str = "take";
+pub const NAME: &str = "stream";
+const ARG_EVENT_TYPE: &str = "event-type";
+const ARG_TAKE: &str = "take";
 
 struct Params<'a> {
     event_type: &'a str,

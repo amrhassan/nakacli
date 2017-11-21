@@ -1,10 +1,10 @@
 
 use clap::{Arg, ArgMatches};
 
-const ARG_PRETTY: &'static str = "pretty";
-const ARG_ZIGN: &'static str = "zign";
-const ARG_BEARER_TOKEN: &'static str = "bearer_token";
-const ARG_NAKADI_URL: &'static str = "nakadi_url";
+const ARG_PRETTY: &str = "pretty";
+const ARG_ZIGN: &str = "zign";
+const ARG_BEARER_TOKEN: &str = "bearer_token";
+const ARG_NAKADI_URL: &str = "nakadi_url";
 
 pub struct GlobalParams<'a> {
     pub pretty: bool,

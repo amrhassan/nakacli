@@ -19,7 +19,7 @@ use serde_json::Value;
 use hyper::Body;
 use std::net::SocketAddr;
 
-const HOST: &'static str = "127.0.0.1:8060";
+const HOST: &str = "127.0.0.1:8060";
 
 #[test]
 fn metrics_command() {

@@ -7,7 +7,7 @@ use http;
 use hyper::{Method, StatusCode};
 use output;
 
-pub const NAME: &'static str = "list";
+pub const NAME: &str = "list";
 
 pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME).about("Lists all the event types")

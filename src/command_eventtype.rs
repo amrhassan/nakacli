@@ -5,7 +5,7 @@ use command_eventtype_list;
 use command_eventtype_create;
 use command_eventtype_delete;
 
-pub const NAME: &'static str = "event-type";
+pub const NAME: &str = "event-type";
 
 pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME).about("Event types")
