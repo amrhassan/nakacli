@@ -211,6 +211,29 @@ fn eventtype_create_command() {
 }
 
 #[test]
+fn eventtype_delete_command() {
+
+    let eventtype_name = "NEW_EVENT_TYPE";
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: format!("/event-types/{}", eventtype_name),
+        expected_request_body: ExpectedRequestBody::None,
+        expected_method: Method::Delete,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "delete", eventtype_name])
+        .succeeds()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
 fn eventtype_list_command() {
 
     let list_response = json!([

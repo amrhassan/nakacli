@@ -25,7 +25,7 @@ yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
 - [x] Metrics querying
 - [x] [Zign](https://github.com/zalando-stups/zign) authentication
 - [x] Event type creation
-- [ ] Even type deletion
+- [x] Even type deletion
 - [x] Publishing events
 - [x] Stream published events of a certain type
 - [ ] Creating subscriptions
@@ -41,6 +41,12 @@ Starts streaming published events of type `<event-type>` to STDOUT. It should bl
 
 #### `nakacli event-type create [FLAGS] [OPTIONS] <owning-application> <name> <json-schema>` ####
 Creates an event type with the given parameters. Optionally accepts a `--partition-strategy=hash` param, with which you'll have to specify one or more `--partition-key-field` to indicate the fields to be used in computing the partitioning hash. Compatibility mode for created event type can be specified using the `--compatibility-mode` option.
+
+#### `nakacli event-type delete [FLAGS] [OPTIONS] <name>` ####
+Deletes the event-type with the specified `<name>`.
+
+#### `nakacli event-type list [FLAGS] [OPTIONS]` ####
+Lists all the registered available event-types (most likely a lot of output, prepare to pipe it to `less`. Also the `--pretty` flag might make it more human-readable if you're interested in reading it.)
 
 #### `nakacli metrics [FLAGS] [OPTIONS]` ####
 Prints the Nakadi server metrics.

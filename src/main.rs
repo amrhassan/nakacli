@@ -24,6 +24,7 @@ mod command_event_stream;
 mod command_eventtype;
 mod command_eventtype_list;
 mod command_eventtype_create;
+mod command_eventtype_delete;
 mod auth;
 mod output;
 mod global;
