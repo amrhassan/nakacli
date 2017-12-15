@@ -13,7 +13,9 @@ pub const NAME:                         &str = "create";
 const ARG_NAME:                         &str = "name";
 const ARG_OWNING_APPLICATION:           &str = "owning-application";
 const ARG_CATEGORY:                     &str = "category";
-const ARG_CATEGORY_VALUES:              &'static [&str] = &["undefined", "business", "data"];
+const ARG_CATEGORY_UNDEFINED:           &str = "undefined";
+const ARG_CATEGORY_BUSINESS:            &str = "business";
+const ARG_CATEGORY_DATA:                &str = "data";
 const ARG_JSON_SCHEMA:                  &str = "json-schema";
 const ARG_PARTITION_STRATEGY:           &str = "partition-strategy";
 const ARG_PARTITION_STRATEGY_VALUES:    &'static [&str] = &["random", "hash"];
@@ -36,8 +38,10 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
             .long("category")
             .takes_value(true)
             .required(false)
-            .possible_values(ARG_CATEGORY_VALUES)
-            .default_value(ARG_CATEGORY_VALUES[0])
+            .possible_value(ARG_CATEGORY_UNDEFINED)
+            .possible_value(ARG_CATEGORY_DATA)
+            .possible_value(ARG_CATEGORY_BUSINESS)
+            .default_value(ARG_CATEGORY_UNDEFINED)
         )
         .arg(Arg::with_name(ARG_PARTITION_STRATEGY)
             .long("partition-strategy")
@@ -89,6 +93,13 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
 
     let params = extract_params(matches);
 
+    let enrichment_strategies =
+        if params.category == ARG_CATEGORY_BUSINESS || params.category == ARG_CATEGORY_DATA {
+            vec!["metadata_enrichment"]
+        } else {
+            vec![]
+        };
+
     let request_body = json!({
         "name": params.name.to_string(),
         "owning_application": params.owning_application.to_string(),
@@ -96,6 +107,7 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
         "partition_strategy": params.partition_strategy,
         "compatibility_mode": params.compatibility_mode,
         "partition_key_fields": params.partition_key_fields,
+        "enrichment_strategies": enrichment_strategies,
         "schema": {
             "type": "json_schema",
             "schema": params.json_schema.to_string()

@@ -224,6 +224,7 @@ fn eventtype_create_command() {
         "partition_strategy": partition_strategy,
         "compatibility_mode": compatibility_mode,
         "partition_key_fields": partition_key_fields,
+        "enrichment_strategies": Vec::<String>::new(),
         }));
 
     let mocked_service = MockedService {
@@ -273,6 +274,7 @@ fn eventtype_create_command_from_file() {
         "partition_strategy": partition_strategy,
         "compatibility_mode": compatibility_mode,
         "partition_key_fields": partition_key_fields,
+        "enrichment_strategies": Vec::<String>::new(),
         }));
 
     let mocked_service = MockedService {
@@ -287,6 +289,92 @@ fn eventtype_create_command_from_file() {
 
     Assert::main_binary()
         .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", owning_application, eventtype_name, &format!("@{}", path)])
+        .succeeds()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn eventtype_create_command_category_data() {
+
+    let eventtype_schema = json!({"type":"object","properties":{"partner_id":{"type":"number"},"quantity":{"type":"number"},"app_domain":{"type":"string"},"article_id":{"type":"string"}}});
+    let eventtype_name = "NEW_EVENT_TYPE";
+    let owning_application = "testapp";
+    let category = "data";
+    let partition_strategy = "random";
+    let partition_key_fields: Option<Vec<&str>> = None;
+    let compatibility_mode = "forward";
+
+    let expected_request_body = ExpectedRequestBody::JsonValue(json!({
+        "name": eventtype_name,
+        "schema": {
+            "type": "json_schema",
+            "schema": format!("{}", eventtype_schema),
+        },
+        "owning_application": owning_application,
+        "category": category,
+        "partition_strategy": partition_strategy,
+        "compatibility_mode": compatibility_mode,
+        "partition_key_fields": partition_key_fields,
+        "enrichment_strategies": ["metadata_enrichment"],
+        }));
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types".to_string(),
+        expected_request_body,
+        expected_method: Method::Post,
+        status_code: StatusCode::Created,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", "--category", category,  owning_application, eventtype_name, &format!("{}", eventtype_schema)])
+        .succeeds()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn eventtype_create_command_category_business() {
+
+    let eventtype_schema = json!({"type":"object","properties":{"partner_id":{"type":"number"},"quantity":{"type":"number"},"app_domain":{"type":"string"},"article_id":{"type":"string"}}});
+    let eventtype_name = "NEW_EVENT_TYPE";
+    let owning_application = "testapp";
+    let category = "business";
+    let partition_strategy = "random";
+    let partition_key_fields: Option<Vec<&str>> = None;
+    let compatibility_mode = "forward";
+
+    let expected_request_body = ExpectedRequestBody::JsonValue(json!({
+        "name": eventtype_name,
+        "schema": {
+            "type": "json_schema",
+            "schema": format!("{}", eventtype_schema),
+        },
+        "owning_application": owning_application,
+        "category": category,
+        "partition_strategy": partition_strategy,
+        "compatibility_mode": compatibility_mode,
+        "partition_key_fields": partition_key_fields,
+        "enrichment_strategies": ["metadata_enrichment"],
+        }));
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types".to_string(),
+        expected_request_body,
+        expected_method: Method::Post,
+        status_code: StatusCode::Created,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event-type", "create", "--category", category,  owning_application, eventtype_name, &format!("{}", eventtype_schema)])
         .succeeds()
         .unwrap();
 
