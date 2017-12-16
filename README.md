@@ -67,5 +67,8 @@ Specifies the URL to the Nakadi server in the format `scheme://[auth:]hostname:[
 #### `--pretty` ####
 Makes JSON output properly-indented for easier human readability.
 
+#### `--network-timeout <network-timeout>` ####
+Specifies the network timeout for non-streaming operations in seconds (default value: 1).
+
 ### More ###
 Check `nakacli help` for a full list of all the supported commands, and `nakacli COMMAND --help` for their options, flags and arguments.
