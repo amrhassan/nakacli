@@ -10,6 +10,7 @@ use serde_json::{Value, Map, from_str};
 use global::*;
 use clap::{ArgMatches, App, SubCommand, Arg};
 use futures::stream;
+use arg_validators;
 
 pub const NAME: &str = "stream";
 const ARG_EVENT_TYPE: &str = "event-type";
@@ -31,7 +32,7 @@ pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME)
         .about("Stream-listen on published events")
         .arg(Arg::with_name(ARG_EVENT_TYPE).required(true).index(1).help("Name of the Event Type"))
-        .arg(Arg::with_name(ARG_TAKE).long("take").short("n").takes_value(true).value_name("N").help("Exits after consuming N events from the stream").validator(arg_take_validator))
+        .arg(Arg::with_name(ARG_TAKE).long("take").short("n").takes_value(true).value_name("N").help("Exits after consuming N events from the stream").validator(arg_validators::unsigned_int))
 }
 
 pub fn run(application: &mut Application, global_params: &GlobalParams, matches: &ArgMatches) {
@@ -101,13 +102,6 @@ fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>, par
                     future::ok((mut_acc, i))
                 }
             })
-    }
-}
-
-fn arg_take_validator(v: String) -> Result<(), String> {
-    match v.parse::<u64>() {
-        Ok(n) if n > 0 => Ok(()),
-        _ => Err("Value should be a positive integer".to_string())
     }
 }
 

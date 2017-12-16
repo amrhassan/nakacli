@@ -29,6 +29,7 @@ mod auth;
 mod output;
 mod global;
 mod input;
+mod arg_validators;
 
 use clap::{App, AppSettings};
 use app::Application;
@@ -46,7 +47,7 @@ fn main() {
 
     let global_params = global::extract_global_params(&matches);
 
-    let mut application = Application::new();
+    let mut application = Application::new(&global_params);
 
     if let Some(_) = matches.subcommand_matches(command_metrics::NAME) {
         command_metrics::run(&mut application, &global_params)
