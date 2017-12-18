@@ -15,41 +15,78 @@ use output::{Failure, failure, die_failure};
 pub const NAME:             &str = "publish";
 const ARG_EVENT_TYPE:       &str = "event-type";
 const ARG_JSON_BODY:        &str = "json-body";
-const ARG_ENRICH_METADATA:  &str = "enrich-metadata";
+const ARG_BUSINESS:         &str = "category-business";
+const ARG_DATA:             &str = "category-data";
+const ARG_DATA_OP:          &str = "data-op";
+const ARG_DATA_OP_VALUES:   &[&str] = &["create", "update", "snapshot"];
 
 pub fn sub_command<'a>() -> App<'a, 'a> {
     SubCommand::with_name(NAME)
         .about("Publish one or more events")
         .arg(Arg::with_name(ARG_EVENT_TYPE).required(true).index(1).help("Name of the Event Type"))
-        .arg(Arg::with_name(ARG_ENRICH_METADATA).required(false).takes_value(false).long("enrich-metadata").short("m").help("Enriches required metadata fields for data/business events if missing"))
+        .arg(Arg::with_name(ARG_BUSINESS).required(false).takes_value(false).long("business").short("b").help("Declares that this is a business evnet").conflicts_with(ARG_DATA))
+        .arg(Arg::with_name(ARG_DATA).required(false).takes_value(false).long("data").short("d").help("Declares that this is a data event").conflicts_with(ARG_BUSINESS))
         .arg(Arg::with_name(ARG_JSON_BODY)
             .required(true)
             .index(2)
             .help("Body of one or more events in JSON format (Use '@' prefix to specify a filepath. e.g. '@event.json')")
             .validator(validate_json_body)
         )
+        .arg(Arg::with_name(ARG_DATA_OP).required(false).takes_value(true).possible_values(ARG_DATA_OP_VALUES).required_if(ARG_DATA, ""))
 }
 
-struct Params<'a> {
-    event_type: &'a str,
-    json_body: String,
-    enrich_metadata: bool,
+enum Category {
+    Undefined,
+    Data { op: DataOp },
+    Business,
 }
 
-fn extract_params<'a>(matches: &'a ArgMatches) -> Params<'a> {
-    Params {
-        event_type: matches.value_of(ARG_EVENT_TYPE).expect("Non-optional argument should have been caught by clap if missing"),
-        json_body: matches.value_of(ARG_JSON_BODY).and_then(|v| long_argument(v).ok()).expect("Non-optional argument should have been caught by clap if missing"),
-        enrich_metadata: matches.occurrences_of(ARG_ENRICH_METADATA) > 0,
-    }
+enum DataOp {
+    Create,
+    Update,
+    Deletion,
+    Snapshot,
+}
+
+struct Params {
+    event_type: EventType,
+    json_body: serde_json::Value,
+    category: Category,
+}
+
+struct EventType(String);
+
+fn decode_params(matches: &ArgMatches) -> Params {
+
+    let category =
+        if matches.occurrences_of(ARG_DATA) > 0 {
+            let op = matches.value_of(ARG_DATA_OP).expect("Required field should have been caught by clap");
+            Category::Data {
+                op: match op { "C" => DataOp::Create, "U" => DataOp::Update, "D" => DataOp::Deletion, "S" => DataOp::Snapshot }
+            }
+        } else if matches.occurrences_of(ARG_BUSINESS) > 0 {
+            Category::Business
+        } else {
+            Category::Undefined
+        };
+
+    let json_body_str = matches
+        .value_of(ARG_JSON_BODY)
+        .and_then(|v| long_argument(v).ok())
+        .expect("Non-optional argument should have been caught by clap if missing");
+
+    let json_body =
+        serde_json::from_str::<serde_json::Value>(json_body_str).expect("Failed to JSON-decode text that was validated to be JSON by clap");
+
+    let event_type = EventType(matches.value_of(ARG_EVENT_TYPE).expect("Non-optional argument should have been caught by clap if missing"));
+
+    Params { event_type, json_body, category }
 }
 
 pub fn run(application: &mut Application, global_params: &GlobalParams, matches: &ArgMatches) {
-    let params = extract_params(matches);
+    let params = decode_params(matches);
     let server_info = ServerInfo::from_params(global_params);
     let path = format!("/event-types/{}/events", params.event_type);
-
-    let decoded_events = serde_json::from_str::<serde_json::Value>(&params.json_body).expect("Failed to JSON-decode text that was validated to be JSON by clap");
 
     let body: serde_json::Value = match request_body(decoded_events, params.enrich_metadata) {
         Ok(b)       => b,
