@@ -4,7 +4,7 @@ use server::ServerInfo;
 use futures::Future;
 use app::Application;
 use hyper::{Method, Response, StatusCode};
-use output::{die_failure, failure, print_json_value, Failure, die_success};
+use output::{die_failure, failure_detailed, print_json_value, Failure, die_success, failure};
 use futures::Stream;
 use serde_json::{Value, Map, from_str};
 use global::*;
@@ -51,20 +51,20 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
 
     match application.core.run(action) {
         Err(err) => die_failure(err),
-        Ok(_) => die_failure(failure("Stream ended abrputly!", ""))
+        Ok(_) => die_failure(failure("Stream ended abrputly!"))
     }
 }
 
 fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>, params: &'a Params<'a>) -> impl Future<Item=(Vec<u8>, usize), Error=Failure> + 'a {
     if resp.status() != StatusCode::Ok {
-        die_failure(failure("Unexpected status code", resp.status()))
+        die_failure(failure_detailed("Unexpected status code", resp.status()))
     } else {
         resp.body()
             .map(|chunk| {
                 let bytes: Vec<u8> = chunk.into_iter().collect();
                 stream::iter_ok(bytes)
             })
-            .map_err(|err| failure("Failed to stream HTTP chunks", err))
+            .map_err(|err| failure_detailed("Failed to stream HTTP chunks", err))
             .flatten()
             .fold((Vec::new(), 0), move |(acc, i), byte| {
 
@@ -73,7 +73,7 @@ fn process_response<'a>(resp: Response, global_params: &'a GlobalParams<'a>, par
 
                     let batch: EventBatch = {
                         match from_str(&line) {
-                            Err(err) => die_failure(failure("Failed to decode an event stream batch", err)),
+                            Err(err) => die_failure(failure_detailed("Failed to decode an event stream batch", err)),
                             Ok(batch) => batch
                         }
                     };

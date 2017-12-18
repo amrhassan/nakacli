@@ -31,7 +31,7 @@ pub fn final_result(result: Result<(StatusCode, String), Failure>, expected_stat
             if pretty {
                 die_failure(failureln(&format!("Unexpected response ({})", status_code), if output.is_empty() { "[No Response Body]".to_owned() } else { pretty_json(&output) }));
             } else {
-                die_failure(failure(&format!("Unexpected response ({})", status_code), if output.is_empty() { "[No Response Body]".to_owned() } else { output }));
+                die_failure(failure_detailed(&format!("Unexpected response ({})", status_code), if output.is_empty() { "[No Response Body]".to_owned() } else { output }));
             }
         }
         Err(err) => {
@@ -59,8 +59,12 @@ pub fn print_json_value(value: &Value, pretty: bool) {
 }
 
 /// Canonical representation of error message
-pub fn failure<A: Display>(header: &str, detailed: A) -> Failure {
+pub fn failure_detailed<A: Display>(header: &str, detailed: A) -> Failure {
     Failure { show: format!("{}: {}", Colour::Red.paint(header), detailed) }
+}
+
+pub fn failure(message: &str) -> Failure {
+    Failure { show: message.to_owned() }
 }
 
 pub struct Failure { show: String }
