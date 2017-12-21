@@ -75,6 +75,150 @@ fn event_publish_command() {
 }
 
 #[test]
+fn event_publish_command_data_update() {
+
+    let event_body = json!({"field-2": "noooo", "field-1": 434234235});
+
+    fn predicate(v: serde_json::Value) -> bool {
+        v.as_array().and_then(|arr| {
+            arr.get(0).and_then(|v| {
+                v.as_object().map(|obj| {
+                    obj.contains_key("metadata") &&
+                        obj.get("data_op") == Some(&json!("U")) &&
+                        obj.get("data").map(|data| data == &json!({"field-2": "noooo", "field-1": 434234235})).unwrap_or(false)
+                })
+            })
+        }).unwrap_or(false)
+    }
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types/event-type-x/events".to_string(),
+        expected_request_body: ExpectedRequestBody::JsonValuePredicate(predicate),
+        expected_method: Method::Post,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "--data-update", "event-type-x", &format!("{}",event_body)])
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn event_publish_command_data_delete() {
+
+    let event_body = json!({"field-2": "noooo", "field-1": 434234235});
+
+    fn predicate(v: serde_json::Value) -> bool {
+        v.as_array().and_then(|arr| {
+            arr.get(0).and_then(|v| {
+                v.as_object().map(|obj| {
+                    obj.contains_key("metadata") &&
+                        obj.get("data_op") == Some(&json!("D")) &&
+                        obj.get("data").map(|data| data == &json!({"field-2": "noooo", "field-1": 434234235})).unwrap_or(false)
+                })
+            })
+        }).unwrap_or(false)
+    }
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types/event-type-x/events".to_string(),
+        expected_request_body: ExpectedRequestBody::JsonValuePredicate(predicate),
+        expected_method: Method::Post,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "--data-delete", "event-type-x", &format!("{}",event_body)])
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn event_publish_command_data_create() {
+
+    let event_body = json!({"field-2": "noooo", "field-1": 434234235});
+
+    fn predicate(v: serde_json::Value) -> bool {
+        v.as_array().and_then(|arr| {
+            arr.get(0).and_then(|v| {
+                v.as_object().map(|obj| {
+                    obj.contains_key("metadata") &&
+                        obj.get("data_op") == Some(&json!("C")) &&
+                        obj.get("data").map(|data| data == &json!({"field-2": "noooo", "field-1": 434234235})).unwrap_or(false)
+                })
+            })
+        }).unwrap_or(false)
+    }
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types/event-type-x/events".to_string(),
+        expected_request_body: ExpectedRequestBody::JsonValuePredicate(predicate),
+        expected_method: Method::Post,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "--data-create", "event-type-x", &format!("{}",event_body)])
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
+fn event_publish_command_data_snapshot() {
+
+    let event_body = json!({"field-2": "noooo", "field-1": 434234235});
+
+    fn predicate(v: serde_json::Value) -> bool {
+        v.as_array().and_then(|arr| {
+            arr.get(0).and_then(|v| {
+                v.as_object().map(|obj| {
+                    obj.contains_key("metadata") &&
+                        obj.get("data_op") == Some(&json!("S")) &&
+                        obj.get("data").map(|data| data == &json!({"field-2": "noooo", "field-1": 434234235})).unwrap_or(false)
+                })
+            })
+        }).unwrap_or(false)
+    }
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types/event-type-x/events".to_string(),
+        expected_request_body: ExpectedRequestBody::JsonValuePredicate(predicate),
+        expected_method: Method::Post,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "--data-snapshot", "event-type-x", &format!("{}",event_body)])
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
 fn event_publish_command_from_file() {
 
     let event_body = json!({"field-2": "noooo", "field-1": 434234235});
@@ -503,6 +647,7 @@ struct MockedService {
 #[derive(Clone, Debug)]
 enum ExpectedRequestBody {
     JsonValue(Value),
+    JsonValuePredicate(fn(Value) -> bool),
 //    Text(String),
     None
 }
@@ -526,6 +671,7 @@ impl Service for MockedService {
 
                 match mocked_service.expected_request_body {
                     ExpectedRequestBody::JsonValue(ref expected_request_json_value) if Some(expected_request_json_value) == serde_json::from_str(&request_body).ok().as_ref() => good_response,
+                    ExpectedRequestBody::JsonValuePredicate(p) if Some(true) == serde_json::from_str(&request_body).ok().map(p) => good_response,
 //                    ExpectedRequestBody::Text(ref expected_request_text) if expected_request_text == &request_body => good_response,
                     ExpectedRequestBody::None => good_response,
                     _ => {
