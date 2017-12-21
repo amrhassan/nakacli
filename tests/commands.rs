@@ -219,6 +219,42 @@ fn event_publish_command_data_snapshot() {
 }
 
 #[test]
+fn event_publish_command_business() {
+
+    let event_body = json!({"field-2": "noooo", "field-1": 434234235});
+
+    fn predicate(v: serde_json::Value) -> bool {
+        v.as_array().and_then(|arr| {
+            arr.get(0).and_then(|v| {
+                v.as_object().map(|obj| {
+                    obj.contains_key("metadata") &&
+                        obj.get("field-2") == Some(&json!("noooo")) &&
+                        obj.get("field-1") == Some(&json!(434234235))
+                })
+            })
+        }).unwrap_or(false)
+    }
+
+    let mocked_service = MockedService {
+        body_factory: || Body::empty(),
+        expected_path: "/event-types/event-type-x/events".to_string(),
+        expected_request_body: ExpectedRequestBody::JsonValuePredicate(predicate),
+        expected_method: Method::Post,
+        status_code: StatusCode::Ok,
+    };
+
+    let shutdown = mocked_service.spawn_start(&HOST.parse().expect("Failed to parse host"));
+
+    Assert::main_binary()
+        .with_args(&["--url", &format!("http://{}", HOST), "event", "publish", "--business", "event-type-x", &format!("{}",event_body)])
+        .succeeds()
+        .execute()
+        .unwrap();
+
+    shutdown.send(()).unwrap();
+}
+
+#[test]
 fn event_publish_command_from_file() {
 
     let event_body = json!({"field-2": "noooo", "field-1": 434234235});

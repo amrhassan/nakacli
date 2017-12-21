@@ -38,6 +38,15 @@ Publishes one or more events of the type `<event-type>`. The `<json-body>` can b
 
 You can specify a file path to read the event body from by passing `@FILEPATH` as the `<json-body>` value.
 
+**Data Change events**
+
+To publish a Data Change event, you'll have to provide one of the options: `--data-create`,
+`--data-update`, `--data-delete`, or `--data-snapshot`, otherwise your command will not be, accepted by the Nakadi server.
+
+**Business events**
+To publish a Business event, you'll have to provide the `--business` option, otherwise your
+command will not be accepted by the Nakadi server.
+
 #### `nakacli event stream [FLAGS] [OPTIONS] <event-type>` ####
 Starts streaming published events of type `<event-type>` to STDOUT. It should block while it's streaming published events until it is interrupted by the user, or it has consumed `N` number of events where `N` is provide by the `--take=N` option.
 

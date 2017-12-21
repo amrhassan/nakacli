@@ -149,9 +149,9 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
     let path = format!("/event-types/{}/events", event_type.0);
 
     let body_maybe = match category {
-        Category::Undefined => request_for_undefined(json_body),
-        Category::Data { op } => request_for_data(&event_type, json_body, op),
-        _ => unimplemented!()
+        Category::Undefined     => request_for_undefined(json_body),
+        Category::Data { op }   => request_for_data(&event_type, json_body, op),
+        Category::Business      => request_for_business(json_body),
     };
 
     let body: serde_json::Value = match body_maybe {
@@ -168,6 +168,30 @@ pub fn run(application: &mut Application, global_params: &GlobalParams, matches:
     );
     let result = application.core.run(action);
     output::final_result(result, StatusCode::Ok, global_params.pretty)
+}
+
+fn request_for_business(json_body: serde_json::Value) -> Result<serde_json::Value, Failure> {
+
+    let business_event = |event: serde_json::Value| -> Result<serde_json::Value, Failure> {
+        let now = Local::now().to_rfc3339();
+        match event {
+            serde_json::Value::Object(obj) => {
+                let mut out = obj;
+                out.insert("metadata".to_owned(), json!({"eid": format!("{}", Uuid::new_v4()), "occurred_at": now }));
+                Ok(serde_json::Value::Object(out))
+            },
+            _ => Err(failure("Provided JSON must be an array of objects"))
+        }
+    };
+
+    match json_body {
+        serde_json::Value::Array(objs) => {
+            let events: Result<Vec<serde_json::Value>, Failure> = objs.into_iter().map(business_event).collect();
+            events.map(serde_json::Value::Array)
+        },
+        obj@serde_json::Value::Object(_)  => business_event(obj).map(|event| serde_json::Value::Array(vec![event])),
+        _ => Err(failure("Event must be either a JSON object or an array of JSON objects."))
+    }
 }
 
 fn request_for_undefined(json_body: serde_json::Value) -> Result<serde_json::Value, Failure> {
