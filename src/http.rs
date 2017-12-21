@@ -5,7 +5,7 @@ use hyper::header;
 use futures::future;
 use futures::Future;
 use futures::Stream;
-use output::{failure, Failure};
+use output::{failure_detailed, Failure};
 use server::Authorization;
 use auth;
 use hyper::client::{HttpConnector};
@@ -34,7 +34,7 @@ pub fn build_request(method: Method, path: &str, server_info: &ServerInfo, body:
     }
 
     if let Some(body_value) = body {
-        let text_body = serde_json::to_string(body_value).map_err(|err| failure("Failed to JSON-serialize the request body", err))?;
+        let text_body = serde_json::to_string(body_value).map_err(|err| failure_detailed("Failed to JSON-serialize the request body", err))?;
         request.headers_mut().set(header::ContentType::json());
         request.set_body(text_body);
     }
@@ -49,13 +49,13 @@ pub fn read_full_resp_body_utf8(response: hyper::Response) -> impl Future<Item=S
     response
         .body()
         .concat2()
-        .map_err(|err| failure("HTTP error", err))
-        .and_then(|chunk| String::from_utf8(chunk.into_iter().collect()).map_err(|err| failure("UTF-8 decoding failure", err)))
+        .map_err(|err| failure_detailed("HTTP error", err))
+        .and_then(|chunk| String::from_utf8(chunk.into_iter().collect()).map_err(|err| failure_detailed("UTF-8 decoding failure", err)))
 }
 
 /// Executes a `Request` yielding a `Response`
 pub fn execute_request(http_client: &HttpClient, request: Request) -> impl Future<Item=Response, Error=Failure> {
-    http_client.request(request).map_err(|err| failure("Sending HTTP request failed", err))
+    http_client.request(request).map_err(|err| failure_detailed("Sending HTTP request failed", err))
 }
 
 /// Executes an HTTP request with the given paramters, and returns the [[StatusCode]] and full body of the response
