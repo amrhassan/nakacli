@@ -15,7 +15,7 @@ snap install --edge nakacli
 ```
 ### Arch Linux ###
 ```bash
-yaourt -S nakacli-bin   # Or substitute with your favorite AUR helper
+aurman -S nakacli-bin   # Or substitute with your favorite AUR helper
 ```
 
 ### Other Platforms ###
